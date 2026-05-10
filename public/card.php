@@ -1,5 +1,7 @@
 <?php
 
+header('X-Robots-Tag: noindex, nofollow', true);
+
 $contacts = json_decode(file_get_contents('../data/contacts.json'), true);
 
 $id = $_GET['id'] ?? '';
@@ -15,38 +17,75 @@ foreach ($contacts as $contact) {
 
 if (!$card) {
     http_response_code(404);
-    exit('Nicht gefunden');
+    exit('Kontakt nicht gefunden');
 }
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
+    <meta charset="UTF-8">
     <title><?= $card['vorname'] ?> <?= $card['nachname'] ?></title>
+
+    <meta name="robots" content="noindex, nofollow, noarchive">
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    >
 </head>
-<body>
+<body class="bg-light">
 
-<h1>
-    <?= $card['vorname'] ?>
-    <?= $card['nachname'] ?>
-</h1>
+<div class="container py-5">
 
-<p><?= $card['firma'] ?></p>
+    <div class="card shadow mx-auto" style="max-width: 500px;">
+        <div class="card-body text-center">
 
-<a href="tel:<?= $card['telefon'] ?>">
-    <?= $card['telefon'] ?>
-</a>
+            <?php if (!empty($card['bild'])): ?>
+                <img
+                    src="/uploads/<?= $card['bild'] ?>"
+                    class="rounded-circle mb-3"
+                    width="120"
+                >
+            <?php endif; ?>
 
-<br>
+            <h1 class="h3">
+                <?= $card['vorname'] ?>
+                <?= $card['nachname'] ?>
+            </h1>
 
-<a href="mailto:<?= $card['email'] ?>">
-    <?= $card['email'] ?>
-</a>
+            <p class="text-muted">
+                <?= $card['firma'] ?>
+            </p>
 
-<br><br>
+            <div class="d-grid gap-2 mt-4">
 
-<a href="/<?= $card['id'] ?>/vcard">
-    Kontakt speichern
-</a>
+                <a
+                    href="tel:<?= $card['telefon'] ?>"
+                    class="btn btn-primary"
+                >
+                    Anrufen
+                </a>
+
+                <a
+                    href="mailto:<?= $card['email'] ?>"
+                    class="btn btn-outline-primary"
+                >
+                    E-Mail
+                </a>
+
+                <a
+                    href="/<?= $card['id'] ?>/vcard"
+                    class="btn btn-success"
+                >
+                    Kontakt speichern
+                </a>
+
+            </div>
+
+        </div>
+    </div>
+
+</div>
 
 </body>
 </html>
