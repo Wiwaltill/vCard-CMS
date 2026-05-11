@@ -24,7 +24,7 @@ if (!$card) {
     exit;
 }
 
-$pageUrl = current_url();
+$pageUrl = contact_url($card);
 $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=' . urlencode($pageUrl);
 $lang = app_lang($config);
 $theme = theme_name($config);
@@ -42,7 +42,7 @@ $email = contact_email($card, $config);
 <meta name="description" content="Kontaktdaten austauschen">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="theme-color" content="<?= h($config['company_color']) ?>">
-<?php if (!empty($config['pwa_enabled'])): ?><link rel="manifest" href="/manifest.webmanifest"><?php endif; ?>
+<?php if (!empty($config['pwa_enabled'])): ?><link rel="manifest" href="/manifest.webmanifest?id=<?= h($card['id'] ?? '') ?>"><link rel="apple-touch-icon" href="/assets/icons/icon.svg"><?php endif; ?>
 
 <title>Kontaktinformationen: <?= h($name) ?> | <?= h($config['company_name']) ?></title>
 
@@ -374,7 +374,7 @@ html[data-theme="minimal"] .contact-card { box-shadow:none; border-radius:0; }
 <?= h(t('show_qr', $config)) ?>
 </button>
 <?php if (!empty($config['pwa_enabled'])): ?>
-<button class="btn btn-outline-secondary d-none" id="installPwa" type="button"><?= h(t('install_app', $config)) ?></button>
+<button class="btn btn-outline-secondary" id="installPwa" type="button"><?= h(t('install_app', $config)) ?></button>
 <?php endif; ?>
 </div>
 </div>
@@ -427,6 +427,21 @@ html[data-theme="minimal"] .contact-card { box-shadow:none; border-radius:0; }
 </div>
 </div>
 
+
+<div class="modal fade" id="installModal" tabindex="-1">
+<div class="modal-dialog modal-dialog-centered">
+<div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"><?= h(t('install_ios_title', $config)) ?></h5>
+<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body">
+<p class="mb-0"><?= h(t('install_ios_text', $config)) ?></p>
+</div>
+</div>
+</div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
@@ -451,8 +466,16 @@ html[data-theme="minimal"] .contact-card { box-shadow:none; border-radius:0; }
    window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js', {scope:'/'}).catch(console.error));
  }
  let deferredPrompt=null; const installBtn=document.getElementById('installPwa');
- window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); deferredPrompt=e; installBtn?.classList.remove('d-none'); });
- installBtn?.addEventListener('click', async()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; installBtn.classList.add('d-none'); });
+ window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); deferredPrompt=e; });
+ installBtn?.addEventListener('click', async()=>{
+   if(!deferredPrompt) {
+     bootstrap.Modal.getOrCreateInstance(document.getElementById('installModal')).show();
+     return;
+   }
+   deferredPrompt.prompt();
+   await deferredPrompt.userChoice;
+   deferredPrompt=null;
+ });
 })();
 </script>
 </body>
