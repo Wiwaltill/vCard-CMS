@@ -43,21 +43,30 @@ include '../includes/header.php';
 
 <form method="post" enctype="multipart/form-data">
 
-<div class="mb-3">
+<div class="row">
+<div class="col-md-6 mb-3">
 <label class="form-label">Vorname</label>
 <input type="text" name="vorname" id="vorname" class="form-control" required>
 </div>
 
-<div class="mb-3">
+<div class="col-md-6 mb-3">
 <label class="form-label">Nachname</label>
 <input type="text" name="nachname" id="nachname" class="form-control" required>
 </div>
+</div>
 
-<div class="mb-3">
+<div class="row">
+<div class="col-md-6 mb-3">
+<label class="form-label">Position</label>
+<input type="text" name="position" class="form-control">
+</div>
+
+<div class="col-md-6 mb-3">
 <label class="form-label">E-Mail</label>
 <input type="email" name="email" id="email" class="form-control" disabled>
 <div class="form-text">
-Standardmäßig automatisch nach Schema: <?= h(email_pattern_label($config['email_pattern'])) ?> mit @<?= h($config['email_domain']) ?>
+Automatisch: <?= h(email_pattern_label($config['email_pattern'])) ?> mit @<?= h($config['email_domain']) ?>
+</div>
 </div>
 </div>
 
@@ -68,19 +77,16 @@ Automatische E-Mail überschreiben
 </label>
 </div>
 
-<div class="mb-3">
-<label class="form-label">Position</label>
-<input type="text" name="position" class="form-control">
-</div>
-
-<div class="mb-3">
+<div class="row">
+<div class="col-md-6 mb-3">
 <label class="form-label">Telefon</label>
 <input type="text" name="telefon" class="form-control">
 </div>
 
-<div class="mb-3">
+<div class="col-md-6 mb-3">
 <label class="form-label">Mitarbeiterfoto</label>
 <input type="file" name="bild" class="form-control" accept=".png,.jpg,.jpeg,.webp">
+</div>
 </div>
 
 <button class="btn btn-success">Speichern</button>
