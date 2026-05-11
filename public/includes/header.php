@@ -76,13 +76,13 @@ footer {
 </li>
 
 <li class="nav-item">
-<a class="nav-link" href="/admin/settings.php">
+<a class="nav-link" href="/admin/settings">
 <i class="bi bi-gear"></i> Einstellungen
 </a>
 </li>
 
 <li class="nav-item">
-<a class="nav-link" href="/admin/logout.php">
+<a class="nav-link" href="/admin/logout">
 <i class="bi bi-box-arrow-right"></i> Logout
 </a>
 </li>
