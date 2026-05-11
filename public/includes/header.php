@@ -3,7 +3,7 @@ require_once __DIR__ . '/functions.php';
 $config = get_config();
 ?>
 <!DOCTYPE html>
-<html lang="<?= h(app_lang($config)) ?>" data-bs-theme="<?= h(initial_bs_theme($config)) ?>" data-bs-theme-mode="<?= h(theme_mode($config)) ?>">
+<html lang="<?= h(admin_lang($config)) ?>" data-bs-theme="<?= h(initial_bs_theme($config)) ?>" data-bs-theme-mode="<?= h(theme_mode($config)) ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow,noarchive">
