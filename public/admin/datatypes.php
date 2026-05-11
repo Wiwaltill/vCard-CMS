@@ -41,11 +41,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'add') {
-        $label = trim($_POST['new_label'] ?? '');
         $kind = $_POST['new_type'] ?? 'text';
+        $platform = $_POST['new_platform'] ?? '';
 
-        if ($label !== '') {
+        $platformLabels = [
+            'facebook' => 'Facebook',
+            'instagram' => 'Instagram',
+            'linkedin' => 'LinkedIn',
+            'tiktok' => 'TikTok',
+            'x' => 'X',
+            'youtube' => 'YouTube',
+            'xing' => 'Xing'
+        ];
+
+        if ($kind === 'social') {
+            $label = $platformLabels[$platform] ?? '';
+            $key = $platform;
+            $vcardField = $label !== '' ? 'URL;TYPE=' . $label : '';
+        } else {
+            $label = trim($_POST['new_label'] ?? '');
             $key = unique_data_type_key($label, $types);
+            $vcardField = '';
+            $platform = '';
+        }
+
+        if ($label !== '' && $key !== '') {
+            $existingKeys = array_map(function ($type) {
+                return $type['key'] ?? '';
+            }, $types);
+
+            if (in_array($key, $existingKeys, true)) {
+                $key = unique_data_type_key($label, $types);
+            }
 
             $types[] = [
                 'key' => $key,
@@ -54,8 +81,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'enabled' => true,
                 'builtin' => false,
                 'sort' => ((count($types) + 1) * 10),
-                'vcard' => '',
-                'platform' => $_POST['new_platform'] ?? ''
+                'vcard' => $vcardField,
+                'platform' => $platform
             ];
 
             $config['data_types'] = normalize_data_types($types);
@@ -186,12 +213,7 @@ Die Reihenfolge wird über die Sortierung bestimmt. Systemfelder können nicht g
 <input type="hidden" name="action" value="add">
 
 <div class="row">
-<div class="col-md-5 mb-3">
-<label class="form-label">Bezeichnung</label>
-<input type="text" name="new_label" class="form-control" placeholder="z.B. Fax, Festnetz, Instagram">
-</div>
-
-<div class="col-md-3 mb-3">
+<div class="col-md-4 mb-3">
 <label class="form-label">Typ</label>
 <select name="new_type" id="new_type" class="form-select">
 <option value="text">Text</option>
@@ -202,10 +224,15 @@ Die Reihenfolge wird über die Sortierung bestimmt. Systemfelder können nicht g
 </select>
 </div>
 
-<div class="col-md-4 mb-3">
+<div class="col-md-8 mb-3" id="label_group">
+<label class="form-label">Bezeichnung</label>
+<input type="text" name="new_label" id="new_label" class="form-control" placeholder="z.B. Fax, Festnetz, Website">
+</div>
+
+<div class="col-md-8 mb-3 d-none" id="platform_group">
 <label class="form-label">Social-Media-Plattform</label>
 <select name="new_platform" id="new_platform" class="form-select">
-<option value="">—</option>
+<option value="">Bitte wählen</option>
 <option value="facebook">Facebook</option>
 <option value="instagram">Instagram</option>
 <option value="linkedin">LinkedIn</option>
@@ -215,7 +242,7 @@ Die Reihenfolge wird über die Sortierung bestimmt. Systemfelder können nicht g
 <option value="xing">Xing</option>
 </select>
 <div class="form-text">
-Nur relevant bei Typ „Social Media“.
+Bei Social Media werden Bezeichnung, Key und vCard-Feld automatisch gesetzt, z.B. <code>URL;TYPE=Instagram</code>.
 </div>
 </div>
 </div>
@@ -231,17 +258,29 @@ Bei Social Media reicht im Kontaktformular später der Username. Beispiel: <code
 
 <script>
 const typeSelect = document.getElementById('new_type');
+const platformGroup = document.getElementById('platform_group');
 const platformSelect = document.getElementById('new_platform');
+const labelGroup = document.getElementById('label_group');
+const labelInput = document.getElementById('new_label');
 
-function togglePlatform() {
-    platformSelect.disabled = typeSelect.value !== 'social';
-    if (typeSelect.value !== 'social') {
+function toggleNewFieldMode() {
+    const isSocial = typeSelect.value === 'social';
+
+    platformGroup.classList.toggle('d-none', !isSocial);
+    labelGroup.classList.toggle('d-none', isSocial);
+
+    platformSelect.disabled = !isSocial;
+    labelInput.disabled = isSocial;
+
+    if (isSocial) {
+        labelInput.value = '';
+    } else {
         platformSelect.value = '';
     }
 }
 
-typeSelect.addEventListener('change', togglePlatform);
-togglePlatform();
+typeSelect.addEventListener('change', toggleNewFieldMode);
+toggleNewFieldMode();
 </script>
 
 
