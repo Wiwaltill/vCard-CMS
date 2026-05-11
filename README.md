@@ -1,48 +1,75 @@
 # Digital vCard CMS
 
-Modernes PHP vCard CMS basierend auf v8.5 mit Mehrsprachigkeit, Themes, PWA und REST API.
+Modernes PHP vCard CMS zur Erstellung digitaler Visitenkarten mit Adminbereich, Mehrsprachigkeit, REST API, PWA und Theme-System. Optimiert für einfache Installation ohne Datenbank.
 
-## Features
+---
 
-- DE / EN Mehrsprachigkeit
-- Theme-System (Classic & Glass)
-- Light / Dark / Auto Modus
+# Funktionen
+
+## Kontaktkarten
+
+- Digitale vCards erstellen
+- Eigene Profilbilder & Coverbilder
+- Kontaktinformationen verwalten
+- Social Media Links
+- Telefon, Mail, Webseite
+- Standort & Google Maps
+- Download als `.vcf`
+- QR-Code Anzeige
+- Responsive Darstellung für Mobilgeräte
+
+## Mehrsprachigkeit
+
+- Deutsch & Englisch
+- Automatische Browser-Erkennung
+- Sprachumschaltung im Frontend & Adminbereich
+
+## Themes & Darstellung
+
+- Classic Theme
+- Glass Theme
+- Light Mode
+- Dark Mode
+- Auto-Modus nach Systemeinstellung
+
+## PWA / Homescreen
+
+- Als App installierbar
+- „Zum Homescreen hinzufügen“
+- Kontaktkarten starten direkt in der jeweiligen Karte
+- Android & iPhone kompatibel
+
+## QR-Code Funktionen
+
+- QR-Code Anzeige
+- Download als PNG
+- Download als SVG
+
+## Adminbereich
+
+- Kontaktkarten verwalten
+- Datentypen verwalten
 - Drag & Drop Sortierung
-- CSV Import / Export
-- REST API mit Token-Authentifizierung
-- QR-Code Download als PNG & SVG
-- PWA / Zum Homescreen hinzufügen
+- Theme Auswahl
+- Spracheinstellungen
+- Darkmode Umschaltung
+- API Verwaltung
 - Backup & Restore
-- Responsive Bootstrap 5.3 Oberfläche
 
-## Voraussetzungen
+## CSV Funktionen
 
-- PHP 8.0+
-- Apache mit `mod_rewrite`
-- Beschreibbares `/data` Verzeichnis
+- CSV Import
+- CSV Export
+- Kontakte schnell importieren/exportieren
 
-## Installation
+## REST API
 
-1. Dateien auf den Webserver hochladen
-2. `/data` Verzeichnis beschreibbar machen
-3. CMS im Browser öffnen
-4. Im Adminbereich anmelden
-5. Einstellungen konfigurieren
+- JSON API
+- Token-Authentifizierung
+- Kontakte abrufen
+- Kontaktinformationen ausgeben
 
-## Admin Login
-
-Standard Login:
-
-```txt
-Benutzername: admin
-Passwort: admin
-```
-
-Das Passwort nach dem ersten Login unbedingt ändern.
-
-## API
-
-Authentifizierung per Header:
+Authentifizierung:
 
 ```http
 X-API-Token: DEIN_API_TOKEN
@@ -55,24 +82,101 @@ curl -H "X-API-Token: DEIN_API_TOKEN" \
 https://deine-domain.de/api/contacts
 ```
 
-## PWA
+## Backup & Restore
 
-Wenn in den Einstellungen aktiviert, können Kontaktkarten direkt zum Homescreen auf iPhone und Android hinzugefügt werden.
+- Backups direkt im Adminbereich erstellen
+- Restore per Upload
+- JSON-basierte Datensicherung
 
-## Themes & Darkmode
+---
 
-Verfügbare Modi:
+# Voraussetzungen
+
+- PHP 8.0 oder höher
+- Apache Webserver
+- `mod_rewrite` aktiviert
+- Beschreibbares `/data` Verzeichnis
+
+---
+
+# Installation
+
+## 1. Dateien hochladen
+
+Projekt auf den Webserver kopieren.
+
+## 2. Schreibrechte setzen
+
+Folgende Ordner müssen beschreibbar sein:
+
+```txt
+/data
+/backups
+/uploads
+```
+
+## 3. Webseite öffnen
+
+CMS im Browser aufrufen.
+
+## 4. Admin Login
+
+Standard Zugang:
+
+```txt
+Benutzername: admin
+Passwort: admin
+```
+
+Passwort anschließend ändern.
+
+---
+
+# Projektstruktur
+
+```txt
+/admin          → Adminbereich
+/api            → REST API
+/assets         → CSS, JS, Bilder
+/data           → Kontakte & Einstellungen
+/themes         → Themes
+/uploads        → Uploads
+/backups        → Backups
+```
+
+---
+
+# Themes
+
+## Classic
+
+Klassisches Bootstrap Layout.
+
+## Minimal
+
+Minimale Fassung vom Bootstrap Layout.
+
+## Glass
+
+Moderne Glasoptik mit Blur-Effekten und Transparenz.
+
+---
+
+# Darkmode
+
+Unterstützt drei Modi:
 
 - Hell
 - Dunkel
 - Auto (Systemeinstellung)
 
-Der Wechsel ist direkt über die Admin-Navigation möglich.
+Basierend auf Bootstrap 5.3 `data-bs-theme`.
 
-## Backup
+---
 
-Backups können direkt im Adminbereich erstellt und wiederhergestellt werden.
+# Sicherheit
 
-## Lizenz
-
-Private / angepasste Extended-Version basierend auf Digital vCard CMS v8.5.
+- Passwortgeschützter Adminbereich
+- API Token Schutz
+- JSON-basierte Datenspeicherung
+- Keine Datenbank notwendig
