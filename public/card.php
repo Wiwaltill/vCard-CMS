@@ -289,7 +289,7 @@ h1 {
 <?php $href = data_type_href($type, $value); ?>
 
 <?php if ($href !== ''): ?>
-<a class="contact-link" href="<?= h($href) ?>" <?= ($type['type'] ?? '') === 'url' ? 'target="_blank" rel="noopener"' : '' ?>>
+<a class="contact-link" href="<?= h($href) ?>" <?= data_type_opens_new_tab($type) ? 'target="_blank" rel="noopener"' : '' ?>>
 <?= data_type_svg_icon($type) ?><?= h($value) ?>
 </a>
 <?php else: ?>
