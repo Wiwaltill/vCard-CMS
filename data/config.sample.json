@@ -33,8 +33,9 @@
       "vcard": "EMAIL"
     }
   ],
-  "language": "de",
+  "language": "auto",
   "theme": "classic",
+  "theme_mode": "auto",
   "darkmode_default": false,
   "pwa_enabled": true,
   "api_enabled": true,
