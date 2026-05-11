@@ -39,6 +39,8 @@ function get_config(): array
         'company_logo' => '/uploads/logo.png',
         'github_url' => 'https://github.com/kb-events',
         'logo_link' => 'https://kb-events.eu',
+        'email_domain' => 'kb-events.eu',
+        'email_pattern' => 'vorname.nachname',
         'admin_user' => 'admin',
         'admin_password_hash' => password_hash('admin123', PASSWORD_DEFAULT)
     ], $config);
@@ -85,6 +87,66 @@ function make_contact_id(string $vorname, string $nachname, array $contacts, ?st
     }
 
     return $id;
+}
+
+function normalize_email_part(string $value): string
+{
+    $map = [
+        'ä' => 'ae', 'ö' => 'oe', 'ü' => 'ue', 'ß' => 'ss',
+        'Ä' => 'ae', 'Ö' => 'oe', 'Ü' => 'ue'
+    ];
+
+    $value = strtr(trim($value), $map);
+    $value = strtolower($value);
+    $value = preg_replace('/[^a-z0-9]+/', '', $value);
+
+    return $value;
+}
+
+function generate_email(string $vorname, string $nachname, array $config): string
+{
+    $first = normalize_email_part($vorname);
+    $last = normalize_email_part($nachname);
+    $domain = strtolower(trim($config['email_domain'] ?? 'kb-events.eu'));
+    $domain = preg_replace('/^@/', '', $domain);
+
+    switch ($config['email_pattern'] ?? 'vorname.nachname') {
+        case 'vorname':
+            $local = $first;
+            break;
+        case 'nachname':
+            $local = $last;
+            break;
+        case 'v.nachname':
+            $local = substr($first, 0, 1) . '.' . $last;
+            break;
+        case 'vorname_nachname':
+            $local = $first . '_' . $last;
+            break;
+        case 'vornamenachname':
+            $local = $first . $last;
+            break;
+        case 'vorname.nachname':
+        default:
+            $local = $first . '.' . $last;
+            break;
+    }
+
+    return $local . '@' . $domain;
+}
+
+function email_pattern_label(string $pattern): string
+{
+    $labels = [
+        'vorname' => 'vorname@domain.de',
+        'nachname' => 'nachname@domain.de',
+        'vorname.nachname' => 'vorname.nachname@domain.de',
+        'v.nachname' => 'v.nachname@domain.de',
+        'vorname_nachname' => 'vorname_nachname@domain.de',
+        'vornamenachname' => 'vornamenachname@domain.de'
+    ];
+
+    return $labels[$pattern] ?? $labels['vorname.nachname'];
 }
 
 function upload_image(string $field, string $prefix): string
@@ -147,7 +209,7 @@ function is_logged_in(): bool
 function require_login(): void
 {
     if (!is_logged_in()) {
-        header('Location: login.php');
+        header('Location: /admin/login');
         exit;
     }
 }
