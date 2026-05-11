@@ -20,8 +20,8 @@ foreach ($contacts as $contact) {
 }
 
 if (!$card) {
-    http_response_code(404);
-    exit('Nicht gefunden');
+    require 'contact-not-found.php';
+    exit;
 }
 
 $pageUrl = current_url();
