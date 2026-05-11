@@ -45,7 +45,8 @@ foreach ($contacts as $contact) {
             }
 
             if ($field !== '') {
-                $vcard .= $field . ":" . vcard_escape($value) . "\r\n";
+                $outputValue = data_type_output_value($type, $value);
+                $vcard .= $field . ":" . vcard_escape($outputValue) . "\r\n";
             }
         }
 
