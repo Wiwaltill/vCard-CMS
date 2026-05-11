@@ -28,7 +28,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nachname = trim($_POST['nachname']);
 
     $newId = make_contact_id($vorname, $nachname, $contacts, $id);
-    $email = generate_email($vorname, $nachname, $config);
+
+    $emailOverride = isset($_POST['email_override']);
+    $autoEmail = generate_email($vorname, $nachname, $config);
+    $email = $emailOverride ? trim($_POST['email']) : $autoEmail;
 
     if (isset($_POST['delete_bild']) && !empty($contacts[$currentKey]['bild'])) {
         delete_public_file($contacts[$currentKey]['bild']);
@@ -49,6 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $contacts[$currentKey]['nachname'] = $nachname;
     $contacts[$currentKey]['telefon'] = $_POST['telefon'];
     $contacts[$currentKey]['email'] = $email;
+    $contacts[$currentKey]['email_override'] = $emailOverride;
     $contacts[$currentKey]['position'] = $_POST['position'];
 
     save_contacts($contacts);
@@ -57,7 +61,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-$currentEmail = generate_email($current['vorname'], $current['nachname'], $config);
+$emailOverride = !empty($current['email_override']);
+$autoEmail = generate_email($current['vorname'], $current['nachname'], $config);
+$currentEmail = $emailOverride ? ($current['email'] ?? $autoEmail) : $autoEmail;
 
 include '../includes/header.php';
 
@@ -78,9 +84,18 @@ include '../includes/header.php';
 </div>
 
 <div class="mb-3">
-<label class="form-label">Automatische E-Mail</label>
-<input type="text" value="<?= h($currentEmail) ?>" class="form-control" disabled>
-<div class="form-text">Die E-Mail wird beim Speichern automatisch nach dem eingestellten Schema aktualisiert.</div>
+<label class="form-label">E-Mail</label>
+<input type="email" name="email" id="email" value="<?= h($currentEmail) ?>" class="form-control" <?= $emailOverride ? '' : 'disabled' ?>>
+<div class="form-text">
+Automatische E-Mail nach aktuellem Schema: <?= h($autoEmail) ?>
+</div>
+</div>
+
+<div class="form-check mb-3">
+<input class="form-check-input" type="checkbox" name="email_override" id="email_override" <?= $emailOverride ? 'checked' : '' ?>>
+<label class="form-check-label" for="email_override">
+Automatische E-Mail überschreiben
+</label>
 </div>
 
 <div class="mb-3">
@@ -113,5 +128,27 @@ include '../includes/header.php';
 <a href="/admin" class="btn btn-secondary">Abbrechen</a>
 
 </form>
+
+<script>
+const overrideCheckbox = document.getElementById('email_override');
+const emailInput = document.getElementById('email');
+const autoEmail = <?= json_encode($autoEmail) ?>;
+const savedEmail = <?= json_encode($currentEmail) ?>;
+
+function toggleEmailField() {
+    emailInput.disabled = !overrideCheckbox.checked;
+
+    if (overrideCheckbox.checked) {
+        if (!emailInput.value) {
+            emailInput.value = savedEmail || autoEmail;
+        }
+    } else {
+        emailInput.value = autoEmail;
+    }
+}
+
+overrideCheckbox.addEventListener('change', toggleEmailField);
+toggleEmailField();
+</script>
 
 <?php include '../includes/footer.php'; ?>
