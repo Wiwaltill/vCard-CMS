@@ -20,6 +20,8 @@ Das System benötigt **keine Datenbank**, kein Docker und kein Framework. Es lä
 - Impressum- und Datenschutzlinks auf der Kontaktseite
 - `noindex`, `nofollow` und `robots.txt`
 - Installationsassistent für die Ersteinrichtung
+- Root-Domain kann auf eine frei definierbare Website weiterleiten
+- Schöne 404-Seite für nicht gefundene Kontakte mit Sammelmail-Button
 
 ## Voraussetzungen
 
@@ -94,13 +96,23 @@ Der Assistent fragt ab:
 - Firmenfarbe
 - Firmenlogo
 - Logo-Link
+- Startseiten-Weiterleitung
 - Impressum-Link
 - Datenschutz-Link
+- Sammelmail für nicht gefundene Kontakte
 - GitHub-Link optional
 - E-Mail-Domain
 - E-Mail-Schema
 - Admin-Benutzername
 - Admin-Passwort
+
+Der Assistent erkennt aus der aufgerufenen Host-Domain automatisch eine Basis-Domain. Beispiel:
+
+```text
+vc.example.com → example.com
+```
+
+Diese Basis-Domain wird als Vorschlag für Mail-Domain, Impressum, Datenschutz, Startseiten-Link und Sammelmail verwendet.
 
 Nach Abschluss wirst du zum Login weitergeleitet.
 
@@ -129,6 +141,27 @@ Im Adminbereich kannst du Kontakte:
 - Mitarbeiterfoto löschen
 - E-Mail automatisch generieren lassen
 - E-Mail manuell überschreiben
+
+## Startseite
+
+Wenn die Root-Domain aufgerufen wird, zum Beispiel:
+
+```text
+https://vc.example.com
+```
+
+wird auf die in den Einstellungen definierte Website weitergeleitet.
+
+## Nicht gefundene Kontakte
+
+Wenn ein Kontakt nicht existiert, wird eine eigene 404-Seite angezeigt:
+
+```text
+Kontakt nicht gefunden
+Der gesuchte Kontakt konnte nicht gefunden werden.
+```
+
+Dort erscheint ein Button „Schreiben Sie uns“. Die Zieladresse ist in den Einstellungen als Sammelmail pflegbar.
 
 ## Kontakt-URLs
 
@@ -197,6 +230,8 @@ Im Adminbereich unter „Einstellungen“ können geändert werden:
 - GitHub-Link
 - Impressum-Link
 - Datenschutz-Link
+- Startseiten-Weiterleitung
+- Sammelmail für nicht gefundene Kontakte
 - Mail-Domain
 - Mail-Schema
 - Admin-Benutzername
@@ -265,6 +300,8 @@ Neue Programmdateien können ersetzt werden. Vorher immer ein Backup erstellen.
   .htaccess
   robots.txt
   install.php
+  index.php
+  contact-not-found.php
   card.php
   vcard.php
   /admin
@@ -296,3 +333,35 @@ Bootstrap und Bootstrap Icons werden per CDN geladen.
 ## Lizenz
 
 Dieses Projekt kann frei angepasst und selbst gehostet werden. Ergänze bei Veröffentlichung gerne eine eigene Lizenzdatei, zum Beispiel MIT.
+
+
+## Verhalten vor Abschluss der Installation
+
+Solange `installed` in `/data/config.json` nicht auf `true` steht, leiten die PHP-Einstiegspunkte automatisch auf `/install` weiter. Die `.htaccess` bleibt dabei bewusst kompatibel mit Shared-Hosting-Umgebungen und verwendet keine Apache-`expr`- oder `file()`-Bedingungen.
+
+
+## Fehlerbehebung: Internal Server Error 500
+
+Falls direkt nach dem Upload ein 500-Fehler erscheint, liegt das bei Shared-Hosting meistens an einer nicht unterstützten `.htaccess`-Anweisung.
+
+Diese Version verwendet deshalb nur klassische `RewriteRule`/`RewriteCond`-Regeln und verschiebt die Installationsprüfung in PHP.
+
+Prüfe außerdem:
+
+- `mod_rewrite` ist aktiv
+- `AllowOverride` erlaubt `.htaccess`
+- DocumentRoot zeigt auf `/public`
+- PHP kann `/data` und `/public/uploads` beschreiben
+
+
+## Fehlerbehebung: Zu viele Umleitungen bei `/install`
+
+Falls `/install` eine Umleitungsschleife erzeugt, prüfe die `.htaccess`. Wichtig ist, dass existierende Dateien und Ordner vor dem Fallback ausgeschlossen werden:
+
+```apache
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+```
+
+Diese Version enthält diese Regel bereits.
