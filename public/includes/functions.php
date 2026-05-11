@@ -644,6 +644,27 @@ function browser_lang(): string
     return 'de';
 }
 
+function configured_lang(?array $config = null): string
+{
+    $config = $config ?: get_config();
+    $allowed = ['de', 'en'];
+    $lang = $config['language'] ?? 'auto';
+
+    if ($lang === 'auto') {
+        return browser_lang();
+    }
+
+    return in_array($lang, $allowed, true) ? $lang : 'de';
+}
+
+function admin_lang(?array $config = null): string
+{
+    // Admin language must follow the saved setting. The public contact-card
+    // language cookie is intentionally ignored here, otherwise a public
+    // ?lang=en click can force the whole admin UI to English.
+    return configured_lang($config);
+}
+
 function app_lang(?array $config = null): string
 {
     $config = $config ?: get_config();
@@ -660,11 +681,7 @@ function app_lang(?array $config = null): string
         return $_COOKIE['vcard_lang'];
     }
 
-    $lang = $config['language'] ?? 'auto';
-    if ($lang === 'auto') {
-        return browser_lang();
-    }
-    return in_array($lang, $allowed, true) ? $lang : 'de';
+    return configured_lang($config);
 }
 
 function t(string $key, ?array $config = null): string
@@ -729,7 +746,7 @@ function admin_t(string $key, ?array $config = null): string
             'company_data'=>'Company data','links'=>'Links','email_auto'=>'Email automation','user_admin'=>'User administration','saved'=>'Settings saved.'
         ],
     ];
-    $lang = app_lang($config);
+    $lang = admin_lang($config);
     return $dict[$lang][$key] ?? $dict['de'][$key] ?? $key;
 }
 
