@@ -26,6 +26,7 @@ include '../includes/header.php';
 <tr>
 <th>Nachname</th>
 <th>Vorname</th>
+<th>E-Mail</th>
 <th>URL</th>
 <th width="160">Aktionen</th>
 </tr>
@@ -39,6 +40,13 @@ include '../includes/header.php';
 
 <td><?= h($contact['nachname']) ?></td>
 <td><?= h($contact['vorname']) ?></td>
+
+<td>
+<?= h(contact_email($contact, $config)) ?>
+<?php if (!empty($contact['email_override'])): ?>
+<span class="badge bg-secondary ms-1">manuell</span>
+<?php endif; ?>
+</td>
 
 <td>
 <a href="https://vc.kb-events.eu/<?= h($contact['id']) ?>" target="_blank" rel="noopener">
