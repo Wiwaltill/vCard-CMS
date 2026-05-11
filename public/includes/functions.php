@@ -118,7 +118,27 @@ function get_config(): array
         'email_pattern' => 'vorname.nachname',
         'admin_user' => 'admin',
         'admin_password_hash' => password_hash('admin123', PASSWORD_DEFAULT),
-        'installed' => false
+        'installed' => false,
+        'data_types' => [
+            [
+                'key' => 'phone',
+                'label' => 'Telefon',
+                'type' => 'tel',
+                'enabled' => true,
+                'builtin' => true,
+                'sort' => 10,
+                'vcard' => 'TEL;TYPE=CELL'
+            ],
+            [
+                'key' => 'email',
+                'label' => 'E-Mail',
+                'type' => 'email',
+                'enabled' => true,
+                'builtin' => true,
+                'sort' => 20,
+                'vcard' => 'EMAIL'
+            ]
+        ]
     ], $sample);
 
     $config = load_json('config.json', $defaults);
@@ -241,6 +261,175 @@ function contact_email(array $contact, array $config): string
 
     return generate_email($contact['vorname'] ?? '', $contact['nachname'] ?? '', $config);
 }
+
+
+function normalize_data_types(array $dataTypes): array
+{
+    $normalized = [];
+
+    foreach ($dataTypes as $index => $type) {
+        $key = preg_replace('/[^a-z0-9_]/', '', strtolower($type['key'] ?? ''));
+
+        if ($key === '') {
+            continue;
+        }
+
+        $normalized[] = [
+            'key' => $key,
+            'label' => trim($type['label'] ?? $key),
+            'type' => $type['type'] ?? 'text',
+            'enabled' => !empty($type['enabled']),
+            'builtin' => !empty($type['builtin']),
+            'sort' => (int)($type['sort'] ?? (($index + 1) * 10)),
+            'vcard' => $type['vcard'] ?? ''
+        ];
+    }
+
+    usort($normalized, function ($a, $b) {
+        return ($a['sort'] <=> $b['sort']) ?: strcmp($a['label'], $b['label']);
+    });
+
+    return array_values($normalized);
+}
+
+function data_types(array $config, bool $onlyEnabled = false): array
+{
+    $types = normalize_data_types($config['data_types'] ?? []);
+
+    if ($onlyEnabled) {
+        $types = array_filter($types, function ($type) {
+            return !empty($type['enabled']);
+        });
+    }
+
+    return array_values($types);
+}
+
+function data_type_by_key(array $config, string $key): ?array
+{
+    foreach (data_types($config) as $type) {
+        if (($type['key'] ?? '') === $key) {
+            return $type;
+        }
+    }
+
+    return null;
+}
+
+function data_type_input_name(string $key): string
+{
+    return 'field_' . $key;
+}
+
+function data_type_value(array $contact, array $type, array $config): string
+{
+    $key = $type['key'] ?? '';
+
+    if ($key === 'email') {
+        return contact_email($contact, $config);
+    }
+
+    if ($key === 'phone') {
+        return $contact['telefon'] ?? '';
+    }
+
+    return $contact['fields'][$key] ?? '';
+}
+
+function set_data_type_value(array &$contact, array $type, string $value): void
+{
+    $key = $type['key'] ?? '';
+
+    if ($key === 'email') {
+        $contact['email'] = $value;
+        return;
+    }
+
+    if ($key === 'phone') {
+        $contact['telefon'] = $value;
+        return;
+    }
+
+    if (!isset($contact['fields']) || !is_array($contact['fields'])) {
+        $contact['fields'] = [];
+    }
+
+    $contact['fields'][$key] = $value;
+}
+
+function data_type_href(array $type, string $value): string
+{
+    $kind = $type['type'] ?? 'text';
+
+    if ($kind === 'email') {
+        return 'mailto:' . $value;
+    }
+
+    if ($kind === 'tel') {
+        return 'tel:' . $value;
+    }
+
+    if ($kind === 'url') {
+        if (preg_match('/^https?:\/\//i', $value)) {
+            return $value;
+        }
+
+        return 'https://' . $value;
+    }
+
+    return '';
+}
+
+function data_type_svg_icon(array $type): string
+{
+    $kind = $type['type'] ?? 'text';
+
+    if ($kind === 'email') {
+        return '<svg class="contact-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a2 2 0 0 0-2 2v1.161l8.441 4.221a1.25 1.25 0 0 0 1.118 0L19 7.162V6a2 2 0 0 0-2-2H3Z"></path><path d="m19 8.839-7.77 3.885a2.75 2.75 0 0 1-2.46 0L1 8.839V14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.839Z"></path></svg>';
+    }
+
+    if ($kind === 'tel') {
+        return '<svg class="contact-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 3.5A1.5 1.5 0 0 1 3.5 2h1.148a1.5 1.5 0 0 1 1.465 1.175l.716 3.223a1.5 1.5 0 0 1-1.052 1.767l-.933.267c-.41.117-.643.555-.48.95a11.542 11.542 0 0 0 6.254 6.254c.395.163.833-.07.95-.48l.267-.933a1.5 1.5 0 0 1 1.767-1.052l3.223.716A1.5 1.5 0 0 1 18 15.352V16.5a1.5 1.5 0 0 1-1.5 1.5H15c-1.149 0-2.263-.15-3.326-.43A13.022 13.022 0 0 1 2.43 8.326 13.019 13.019 0 0 1 2 5V3.5Z" clip-rule="evenodd"></path></svg>';
+    }
+
+    if ($kind === 'url') {
+        return '<svg class="contact-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M12.232 4.232a2.5 2.5 0 0 1 3.536 3.536l-1.225 1.224a.75.75 0 0 0 1.061 1.061l1.224-1.225a4 4 0 0 0-5.656-5.656l-3 3a4 4 0 0 0 .225 5.865.75.75 0 0 0 .977-1.138 2.5 2.5 0 0 1-.142-3.667l3-3Z"></path><path d="M11.603 7.963a.75.75 0 0 0-.977 1.138 2.5 2.5 0 0 1 .142 3.667l-3 3a2.5 2.5 0 0 1-3.536-3.536l1.225-1.224a.75.75 0 0 0-1.061-1.061l-1.224 1.225a4 4 0 1 0 5.656 5.656l3-3a4 4 0 0 0-.225-5.865Z"></path></svg>';
+    }
+
+    return '<svg class="contact-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10A8 8 0 1 1 2 10a8 8 0 0 1 16 0ZM9.25 6.75a.75.75 0 0 1 1.5 0v.5a.75.75 0 0 1-1.5 0v-.5ZM10 9a.75.75 0 0 0-.75.75v3.5a.75.75 0 0 0 1.5 0v-3.5A.75.75 0 0 0 10 9Z" clip-rule="evenodd"></path></svg>';
+}
+
+function unique_data_type_key(string $label, array $existingTypes): string
+{
+    $map = [
+        'ä' => 'ae', 'ö' => 'oe', 'ü' => 'ue', 'ß' => 'ss',
+        'Ä' => 'ae', 'Ö' => 'oe', 'Ü' => 'ue'
+    ];
+
+    $base = strtr($label, $map);
+    $base = strtolower($base);
+    $base = preg_replace('/[^a-z0-9]+/', '_', $base);
+    $base = trim($base, '_');
+
+    if ($base === '') {
+        $base = 'feld';
+    }
+
+    $existing = array_map(function ($type) {
+        return $type['key'] ?? '';
+    }, $existingTypes);
+
+    $key = $base;
+    $counter = 2;
+
+    while (in_array($key, $existing, true)) {
+        $key = $base . '_' . $counter;
+        $counter++;
+    }
+
+    return $key;
+}
+
 
 function upload_image(string $field, string $prefix): string
 {
