@@ -21,6 +21,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = admin_t('backup_restore_failed', $config);
     }
 
+    if ($action === 'download_stored') {
+        $path = backup_file_path((string)($_POST['file'] ?? ''));
+        if ($path && is_file($path)) {
+            header('Content-Type: application/zip');
+            header('Content-Disposition: attachment; filename="' . basename($path) . '"');
+            header('Content-Length: ' . filesize($path));
+            readfile($path);
+            exit;
+        }
+        $message = admin_t('backup_restore_failed', $config);
+    }
+
     if ($action === 'restore' && !empty($_FILES['backup']['tmp_name'])) {
         $message = restore_backup_zip($_FILES['backup']['tmp_name']) ? admin_t('backup_restored', $config) : admin_t('backup_restore_failed', $config);
     }
@@ -45,7 +57,7 @@ include '../includes/header.php';
         <div class="card shadow-sm">
             <div class="card-header"><?= h(admin_t('create_backup', $config)) ?></div>
             <div class="card-body">
-                <form method="post"><input type="hidden" name="action" value="create">
+                <form method="post" id="createBackupForm"><input type="hidden" name="action" value="create">
                     <p><?= h(admin_t('backup_export_help', $config)) ?></p><button class="btn btn-primary"><i class="bi bi-archive"></i> <?= h(admin_t('download_backup', $config)) ?></button>
                 </form>
             </div>
@@ -74,7 +86,7 @@ include '../includes/header.php';
                             <th><?= h(admin_t('backup_file', $config)) ?></th>
                             <th><?= h(admin_t('created_at', $config)) ?></th>
                             <th><?= h(admin_t('file_size', $config)) ?></th>
-                            <th width="180"><?= h(admin_t('actions', $config)) ?></th>
+                            <th width="240"><?= h(admin_t('actions', $config)) ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -85,6 +97,11 @@ include '../includes/header.php';
                                 <td><?= h(format_bytes((int)$backup['size'])) ?></td>
                                 <td>
                                     <div class="d-flex gap-2">
+                                        <form method="post">
+                                            <input type="hidden" name="action" value="download_stored">
+                                            <input type="hidden" name="file" value="<?= h($backup['name']) ?>">
+                                            <button class="btn btn-primary btn-sm" title="<?= h(admin_t('download_backup', $config)) ?>"><i class="bi bi-download"></i></button>
+                                        </form>
                                         <form method="post" onsubmit="return confirm('<?= h(admin_t('restore_confirm', $config)) ?>');">
                                             <input type="hidden" name="action" value="restore_stored">
                                             <input type="hidden" name="file" value="<?= h($backup['name']) ?>">
@@ -105,4 +122,50 @@ include '../includes/header.php';
         <?php endif; ?>
     </div>
 </div>
+<script>
+(function () {
+    const form = document.getElementById('createBackupForm');
+    if (!form) return;
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const button = form.querySelector('button[type="submit"], button:not([type])');
+        if (button) button.disabled = true;
+
+        try {
+            const response = await fetch(form.action || window.location.href, {
+                method: 'POST',
+                body: new FormData(form),
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) {
+                throw new Error('Download failed');
+            }
+
+            const blob = await response.blob();
+            const disposition = response.headers.get('Content-Disposition') || '';
+            const fileNameMatch = disposition.match(/filename="?([^";]+)"?/i);
+            const fileName = fileNameMatch ? fileNameMatch[1] : 'backup.zip';
+
+            const url = URL.createObjectURL(blob);
+            const downloadLink = document.createElement('a');
+            downloadLink.href = url;
+            downloadLink.download = fileName;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            downloadLink.remove();
+            URL.revokeObjectURL(url);
+
+            window.location.reload();
+        } catch (error) {
+            console.error(error);
+            window.location.reload();
+        } finally {
+            if (button) button.disabled = false;
+        }
+    });
+})();
+</script>
 <?php include '../includes/footer.php'; ?>
