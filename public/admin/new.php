@@ -1,108 +1,80 @@
 <?php
 
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
+require_once '../includes/functions.php';
+require_login();
 
-$file = '../../data/contacts.json';
-
-if (!file_exists($file)) {
-    file_put_contents($file, '[]');
-}
-
-$json = file_get_contents($file);
-
-$contacts = json_decode($json, true);
-
-if (!is_array($contacts)) {
-    $contacts = [];
-}
+$contacts = load_json('contacts.json', []);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $vorname = trim($_POST['vorname']);
     $nachname = trim($_POST['nachname']);
+    $id = make_contact_id($vorname, $nachname, $contacts);
 
-    $id =
-        strtolower(substr($vorname, 0, 1)) .
-        strtolower(substr($nachname, 0, 1));
+    $bild = upload_image('bild', 'mitarbeiter-' . $id);
 
     $contacts[] = [
         'id' => $id,
         'vorname' => $vorname,
         'nachname' => $nachname,
-        'firma' => $_POST['firma'],
         'telefon' => $_POST['telefon'],
         'email' => $_POST['email'],
-        'bild' => ''
+        'position' => $_POST['position'],
+        'bild' => $bild
     ];
 
-    file_put_contents(
-        $file,
-        json_encode(
-            $contacts,
-            JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE
-        )
-    );
+    save_contacts($contacts);
 
-    header('Location: index.php');
+    header('Location:index.php');
     exit;
 }
 
+include '../includes/header.php';
+
 ?>
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
 
-    <title>Kontakt anlegen</title>
+<h1 class="mb-4">Neuer Kontakt</h1>
 
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    >
-</head>
-<body>
+<form method="post" enctype="multipart/form-data">
 
-<div class="container py-5">
-
-    <h1 class="mb-4">
-        Neuer Kontakt
-    </h1>
-
-    <form method="post">
-
-        <div class="mb-3">
-            <label class="form-label">Vorname</label>
-            <input type="text" name="vorname" class="form-control">
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Nachname</label>
-            <input type="text" name="nachname" class="form-control">
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Firma</label>
-            <input type="text" name="firma" class="form-control">
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Telefon</label>
-            <input type="text" name="telefon" class="form-control">
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">E-Mail</label>
-            <input type="email" name="email" class="form-control">
-        </div>
-
-        <button class="btn btn-success">
-            Speichern
-        </button>
-
-    </form>
-
+<div class="mb-3">
+<label class="form-label">Vorname</label>
+<input type="text" name="vorname" class="form-control" required>
 </div>
 
-</body>
-</html>
+<div class="mb-3">
+<label class="form-label">Nachname</label>
+<input type="text" name="nachname" class="form-control" required>
+</div>
+
+<div class="mb-3">
+<label class="form-label">Position</label>
+<input type="text" name="position" class="form-control">
+</div>
+
+<div class="mb-3">
+<label class="form-label">Telefon</label>
+<input type="text" name="telefon" class="form-control">
+</div>
+
+<div class="mb-3">
+<label class="form-label">E-Mail</label>
+<input type="email" name="email" class="form-control">
+</div>
+
+<div class="mb-3">
+<label class="form-label">Mitarbeiterfoto</label>
+<input type="file" name="bild" class="form-control" accept=".png,.jpg,.jpeg,.webp">
+</div>
+
+<button class="btn btn-success">
+Speichern
+</button>
+
+<a href="index.php" class="btn btn-secondary">
+Abbrechen
+</a>
+
+</form>
+
+<?php include '../includes/footer.php'; ?>
