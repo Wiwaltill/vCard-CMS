@@ -26,18 +26,23 @@ if (!$card) {
 
 $pageUrl = current_url();
 $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=' . urlencode($pageUrl);
+$lang = app_lang($config);
+$theme = theme_name($config);
+$dark = darkmode_default($config);
 
 $name = trim(($card['vorname'] ?? '') . ' ' . ($card['nachname'] ?? ''));
 $email = contact_email($card, $config);
 
 ?>
 <!DOCTYPE html>
-<html lang="de">
+<html lang="<?= h($lang) ?>" data-theme="<?= h($theme) ?>" data-bs-theme="<?= $dark ? 'dark' : 'light' ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Kontaktdaten austauschen">
 <meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="theme-color" content="<?= h($config['company_color']) ?>">
+<?php if (!empty($config['pwa_enabled'])): ?><link rel="manifest" href="/manifest.webmanifest"><?php endif; ?>
 
 <title>Kontaktinformationen: <?= h($name) ?> | <?= h($config['company_name']) ?></title>
 
@@ -61,7 +66,7 @@ body {
 body {
     margin: 0;
     min-height: 100vh;
-    color: #111827;
+    color: var(--bs-body-color);
     background:
         linear-gradient(rgba(255,255,255,.55), rgba(255,255,255,.55)),
         radial-gradient(circle at top left, rgba(0,0,0,.08), transparent 30%),
@@ -81,7 +86,7 @@ body {
     z-index: 50;
     height: 64px;
     border-bottom: 1px solid rgba(17,24,39,.1);
-    background: rgba(255,255,255,.72);
+    background: rgba(var(--bs-body-bg-rgb), .72);
     backdrop-filter: blur(6px);
 }
 
@@ -119,7 +124,7 @@ main {
     padding: 32px;
     border: 1px solid rgba(17,24,39,.12);
     border-radius: 10px;
-    background: rgba(255,255,255,.76);
+    background: rgba(var(--bs-body-bg-rgb), .76);
     box-shadow: 0 12px 30px rgba(0,0,0,.12);
 }
 
@@ -216,7 +221,7 @@ h1 {
     padding: 18px 16px;
     text-align: center;
     font-size: .9rem;
-    color: #4b5563;
+    color: var(--bs-secondary-color);
 }
 
 .site-footer a {
@@ -224,6 +229,29 @@ h1 {
     text-decoration: underline;
     text-underline-offset: 3px;
 }
+[data-bs-theme="dark"] body {
+    background: linear-gradient(135deg, var(--bs-body-bg), var(--bs-tertiary-bg));
+}
+
+[data-bs-theme="dark"] .site-header {
+    background: rgba(var(--bs-body-bg-rgb), .82);
+    border-color: var(--bs-border-color);
+}
+
+[data-bs-theme="dark"] .contact-card,
+html[data-theme="glass"] .contact-card {
+    background: rgba(var(--bs-body-bg-rgb), .72);
+    color: var(--bs-body-color);
+    backdrop-filter: blur(12px);
+}
+
+[data-bs-theme="dark"] .btn-company {
+    color: #fff;
+}
+
+html[data-theme="minimal"] body { background: var(--bs-body-bg); }
+html[data-theme="minimal"] .contact-card { box-shadow:none; border-radius:0; }
+.theme-switch { margin-left:auto; display:flex; gap:8px; align-items:center; }
 
 @media (min-width: 768px) {
     main {
@@ -266,6 +294,10 @@ h1 {
 <?php else: ?>
 <strong><?= h($config['company_name']) ?></strong>
 <?php endif; ?>
+<div class="theme-switch">
+<a class="btn btn-sm btn-outline-secondary" href="?lang=<?= $lang === 'de' ? 'en' : 'de' ?>"><?= strtoupper($lang === 'de' ? 'en' : 'de') ?></a>
+<button class="btn btn-sm btn-outline-secondary" id="darkToggle" type="button">☾</button>
+</div>
 </div>
 </header>
 
@@ -304,12 +336,15 @@ h1 {
 
 <div class="actions">
 <a href="/<?= h($card['id']) ?>/vcard" class="btn btn-company">
-Kontakt speichern
+<?= h(t('save_contact', $config)) ?>
 </a>
 
-<button class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#qrModal">
-QR-Code anzeigen
+<button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#qrModal">
+<?= h(t('show_qr', $config)) ?>
 </button>
+<?php if (!empty($config['pwa_enabled'])): ?>
+<button class="btn btn-outline-secondary d-none" id="installPwa" type="button"><?= h(t('install_app', $config)) ?></button>
+<?php endif; ?>
 </div>
 </div>
 
@@ -328,7 +363,7 @@ QR-Code anzeigen
 
 <footer class="site-footer">
 <?php if (!empty($config['imprint_url'])): ?>
-<a href="<?= h($config['imprint_url']) ?>" target="_blank" rel="noopener">Impressum</a>
+<a href="<?= h($config['imprint_url']) ?>" target="_blank" rel="noopener"><?= h(t('imprint', $config)) ?></a>
 <?php endif; ?>
 
 <?php if (!empty($config['imprint_url']) && !empty($config['privacy_url'])): ?>
@@ -336,7 +371,7 @@ QR-Code anzeigen
 <?php endif; ?>
 
 <?php if (!empty($config['privacy_url'])): ?>
-<a href="<?= h($config['privacy_url']) ?>" target="_blank" rel="noopener">Datenschutz</a>
+<a href="<?= h($config['privacy_url']) ?>" target="_blank" rel="noopener"><?= h(t('privacy', $config)) ?></a>
 <?php endif; ?>
 </footer>
 
@@ -347,13 +382,14 @@ QR-Code anzeigen
 <div class="modal-content">
 
 <div class="modal-header">
-<h5 class="modal-title">QR-Code</h5>
+<h5 class="modal-title"><?= h(t('qr_code', $config)) ?></h5>
 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
 </div>
 
 <div class="modal-body text-center">
 <img src="<?= h($qrUrl) ?>" alt="QR-Code" class="img-fluid mb-3">
-<p class="small text-muted mb-0"><?= h($pageUrl) ?></p>
+<p class="small text-body-secondary"><?= h($pageUrl) ?></p>
+<div class="d-flex justify-content-center gap-2"><a class="btn btn-sm btn-outline-primary" href="/qr/<?= h($card['id']) ?>/png"><?= h(t('download_png', $config)) ?></a><a class="btn btn-sm btn-outline-primary" href="/qr/<?= h($card['id']) ?>/svg"><?= h(t('download_svg', $config)) ?></a></div>
 </div>
 
 </div>
@@ -362,5 +398,21 @@ QR-Code anzeigen
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
+<script>
+(function(){
+ const html=document.documentElement, key='vcard-theme';
+ const savedTheme = localStorage.getItem(key);
+ if(savedTheme) html.setAttribute('data-bs-theme', savedTheme);
+ document.getElementById('darkToggle')?.addEventListener('click',()=>{
+   const next = html.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+   html.setAttribute('data-bs-theme', next);
+   localStorage.setItem(key, next);
+ });
+ if('serviceWorker' in navigator && <?= !empty($config['pwa_enabled']) ? 'true' : 'false' ?>) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+ let deferredPrompt=null; const installBtn=document.getElementById('installPwa');
+ window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); deferredPrompt=e; installBtn?.classList.remove('d-none'); });
+ installBtn?.addEventListener('click', async()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; installBtn.classList.add('d-none'); });
+})();
+</script>
 </body>
 </html>
