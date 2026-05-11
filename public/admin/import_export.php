@@ -35,20 +35,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_FILES['csv']['tmp_name']))
         }
     }
     save_contacts($contacts);
-    $message = $count . ' Kontakte importiert/aktualisiert.';
+    $message = $count . ' ' . admin_t('imported_contacts', $config);
 }
 include '../includes/header.php';
 ?>
-<h1 class="mb-4">CSV Import/Export</h1>
+<h1 class="mb-4"><?= h(admin_t('csv_import_export', $config)) ?></h1>
 <?php if ($message): ?><div class="alert alert-success"><?= h($message) ?></div><?php endif; ?>
 <div class="card shadow-sm mb-4"><div class="card-body">
-<a href="/admin/import_export?export=1" class="btn btn-primary"><i class="bi bi-download"></i> Kontakte als CSV exportieren</a>
+<a href="/admin/import_export?export=1" class="btn btn-primary"><i class="bi bi-download"></i> <?= h(admin_t('export_contacts_csv', $config)) ?></a>
 </div></div>
-<div class="card shadow-sm"><div class="card-header">CSV importieren</div><div class="card-body">
+<div class="card shadow-sm"><div class="card-header"><?= h(admin_t('import_csv', $config)) ?></div><div class="card-body">
 <form method="post" enctype="multipart/form-data">
 <input type="file" name="csv" accept=".csv,text/csv" class="form-control mb-3" required>
-<p class="text-body-secondary small">Trennzeichen: Semikolon. Vorhandene Kontakte werden über die Spalte <code>id</code> aktualisiert.</p>
-<button class="btn btn-success"><i class="bi bi-upload"></i> Import starten</button>
+<p class="text-body-secondary small"><?= h(admin_t('csv_import_help', $config)) ?></p>
+<button class="btn btn-success"><i class="bi bi-upload"></i> <?= h(admin_t('start_import', $config)) ?></button>
 </form>
 </div></div>
 <?php include '../includes/footer.php'; ?>
