@@ -1,63 +1,109 @@
 <?php
 
-$contacts = json_decode(file_get_contents('../../data/contacts.json'), true);
+require_once '../includes/functions.php';
+require_login();
+
+$config = get_config();
+$contacts = load_contacts();
+
+include '../includes/header.php';
 
 ?>
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
 
-    <title>Adminbereich</title>
+<div class="d-flex justify-content-between align-items-center mb-4">
 
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    >
-</head>
-<body>
+<h1>Kontakte</h1>
 
-<div class="container py-5">
-
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Kontakte</h1>
-
-        <a href="new.php" class="btn btn-primary">
-            Neuer Kontakt
-        </a>
-    </div>
-
-    <table class="table table-bordered bg-white">
-
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>URL</th>
-            </tr>
-        </thead>
-
-        <tbody>
-
-        <?php foreach ($contacts as $contact): ?>
-
-            <tr>
-                <td>
-                    <?= $contact['vorname'] ?>
-                    <?= $contact['nachname'] ?>
-                </td>
-
-                <td>
-                    https://vc.kb-events.eu/<?= $contact['id'] ?>
-                </td>
-            </tr>
-
-        <?php endforeach; ?>
-
-        </tbody>
-
-    </table>
+<a href="new.php" class="btn btn-primary">
+<i class="bi bi-plus-lg"></i> Neuer Kontakt
+</a>
 
 </div>
 
-</body>
-</html>
+<table class="table table-bordered bg-white align-middle">
+
+<thead>
+<tr>
+<th>Nachname</th>
+<th>Vorname</th>
+<th>URL</th>
+<th width="160">Aktionen</th>
+</tr>
+</thead>
+
+<tbody>
+
+<?php foreach ($contacts as $contact): ?>
+
+<tr>
+
+<td><?= h($contact['nachname']) ?></td>
+<td><?= h($contact['vorname']) ?></td>
+
+<td>
+<a href="https://vc.kb-events.eu/<?= h($contact['id']) ?>" target="_blank" rel="noopener">
+https://vc.kb-events.eu/<?= h($contact['id']) ?>
+</a>
+</td>
+
+<td>
+
+<div class="d-flex gap-2">
+
+<a href="edit.php?id=<?= h($contact['id']) ?>" class="btn btn-success btn-sm">
+<i class="bi bi-pencil"></i>
+</a>
+
+<button
+class="btn btn-danger btn-sm"
+data-bs-toggle="modal"
+data-bs-target="#deleteModal<?= h($contact['id']) ?>"
+>
+<i class="bi bi-trash"></i>
+</button>
+
+</div>
+
+<div class="modal fade" id="deleteModal<?= h($contact['id']) ?>" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+
+<div class="modal-dialog">
+
+<div class="modal-content">
+
+<div class="modal-header">
+<h5 class="modal-title">Kontakt löschen</h5>
+</div>
+
+<div class="modal-body">
+Soll der Kontakt <strong><?= h($contact['vorname']) ?> <?= h($contact['nachname']) ?></strong> wirklich gelöscht werden?
+</div>
+
+<div class="modal-footer">
+
+<button class="btn btn-secondary" data-bs-dismiss="modal">
+Abbrechen
+</button>
+
+<a href="delete.php?id=<?= h($contact['id']) ?>" class="btn btn-danger">
+Löschen
+</a>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</td>
+
+</tr>
+
+<?php endforeach; ?>
+
+</tbody>
+
+</table>
+
+<?php include '../includes/footer.php'; ?>
