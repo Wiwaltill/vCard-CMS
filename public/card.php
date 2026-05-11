@@ -1,6 +1,7 @@
 <?php
 
 require_once 'includes/functions.php';
+require_installed();
 
 header('X-Robots-Tag: noindex, nofollow', true);
 
