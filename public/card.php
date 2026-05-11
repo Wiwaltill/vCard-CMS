@@ -266,11 +266,31 @@ h1 {
     border-color: var(--bs-border-color);
 }
 
-[data-bs-theme="dark"] .contact-card,
-html[data-theme="glass"] .contact-card {
+[data-bs-theme="dark"] .contact-card {
     background: rgba(var(--bs-body-bg-rgb), .72);
     color: var(--bs-body-color);
-    backdrop-filter: blur(12px);
+}
+
+html[data-theme="glass"] body {
+    background:
+        radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--company-color) 34%, transparent), transparent 32%),
+        radial-gradient(circle at 80% 0%, rgba(255,255,255,.35), transparent 30%),
+        linear-gradient(135deg, color-mix(in srgb, var(--company-color) 18%, var(--bs-body-bg)), var(--bs-tertiary-bg));
+}
+html[data-theme="glass"] .site-header {
+    background: rgba(var(--bs-body-bg-rgb), .48);
+    backdrop-filter: blur(18px) saturate(160%);
+}
+html[data-theme="glass"] .contact-card {
+    background: rgba(var(--bs-body-bg-rgb), .46);
+    color: var(--bs-body-color);
+    border-color: rgba(var(--bs-body-color-rgb), .18);
+    box-shadow: 0 24px 70px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.22);
+    backdrop-filter: blur(24px) saturate(170%);
+}
+html[data-theme="glass"] .employee-photo,
+html[data-theme="glass"] .employee-placeholder {
+    box-shadow: 0 22px 48px rgba(0,0,0,.24);
 }
 
 html[data-theme="minimal"] body { background: var(--bs-body-bg); }
@@ -373,9 +393,6 @@ html[data-theme="minimal"] .contact-card { box-shadow:none; border-radius:0; }
 <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#qrModal">
 <?= h(t('show_qr', $config)) ?>
 </button>
-<?php if (!empty($config['pwa_enabled'])): ?>
-<button class="btn btn-outline-secondary" id="installPwa" type="button"><?= h(t('install_app', $config)) ?></button>
-<?php endif; ?>
 </div>
 </div>
 
@@ -420,27 +437,13 @@ html[data-theme="minimal"] .contact-card { box-shadow:none; border-radius:0; }
 <div class="modal-body text-center">
 <img src="<?= h($qrUrl) ?>" alt="QR-Code" class="img-fluid mb-3">
 <p class="small text-body-secondary"><?= h($pageUrl) ?></p>
-<div class="d-flex justify-content-center gap-2"><a class="btn btn-sm btn-outline-primary" href="/qr/<?= h($card['id']) ?>/png"><?= h(t('download_png', $config)) ?></a><a class="btn btn-sm btn-outline-primary" href="/qr/<?= h($card['id']) ?>/svg"><?= h(t('download_svg', $config)) ?></a></div>
+<div class="d-flex justify-content-center gap-2"><a class="btn btn-sm btn-outline-primary" href="/qr/<?= h($card['id']) ?>/png" download="qr-<?= h($card['id']) ?>.png"><?= h(t('download_png', $config)) ?></a><a class="btn btn-sm btn-outline-primary" href="/qr/<?= h($card['id']) ?>/svg" download="qr-<?= h($card['id']) ?>.svg"><?= h(t('download_svg', $config)) ?></a></div>
 </div>
 
 </div>
 </div>
 </div>
 
-
-<div class="modal fade" id="installModal" tabindex="-1">
-<div class="modal-dialog modal-dialog-centered">
-<div class="modal-content">
-<div class="modal-header">
-<h5 class="modal-title"><?= h(t('install_ios_title', $config)) ?></h5>
-<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-</div>
-<div class="modal-body">
-<p class="mb-0"><?= h(t('install_ios_text', $config)) ?></p>
-</div>
-</div>
-</div>
-</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -465,17 +468,6 @@ html[data-theme="minimal"] .contact-card { box-shadow:none; border-radius:0; }
  if('serviceWorker' in navigator && <?= !empty($config['pwa_enabled']) ? 'true' : 'false' ?>) {
    window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js', {scope:'/'}).catch(console.error));
  }
- let deferredPrompt=null; const installBtn=document.getElementById('installPwa');
- window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); deferredPrompt=e; });
- installBtn?.addEventListener('click', async()=>{
-   if(!deferredPrompt) {
-     bootstrap.Modal.getOrCreateInstance(document.getElementById('installModal')).show();
-     return;
-   }
-   deferredPrompt.prompt();
-   await deferredPrompt.userChoice;
-   deferredPrompt=null;
- });
 })();
 </script>
 </body>
