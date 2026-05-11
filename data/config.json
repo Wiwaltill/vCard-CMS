@@ -5,5 +5,7 @@
   "github_url": "https://github.com/kb-events",
   "admin_user": "admin",
   "admin_password_hash": "$2y$10$ztC016/wWAvHL87IQ2pwPezQb8UixMTXNjMnMT0e4IGnW3LkW4Gga",
-  "logo_link": "https://kb-events.eu"
+  "logo_link": "https://kb-events.eu",
+  "email_domain": "kb-events.eu",
+  "email_pattern": "vorname.nachname"
 }
