@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $emailOverride = !empty($current['email_override']);
 $autoEmail = generate_email($current['vorname'], $current['nachname'], $config);
-$currentEmail = $emailOverride ? ($current['email'] ?? $autoEmail) : $autoEmail;
+$currentEmail = contact_email($current, $config);
 
 include '../includes/header.php';
 
