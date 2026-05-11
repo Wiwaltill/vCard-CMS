@@ -6,6 +6,7 @@ require_login();
 
 $config = get_config();
 $contacts = load_json('contacts.json', []);
+$types = data_types($config);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
@@ -19,17 +20,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $bild = upload_image('bild', 'mitarbeiter-' . $id);
 
-    $contacts[] = [
+    $contact = [
         'id' => $id,
         'vorname' => $vorname,
         'nachname' => $nachname,
-        'telefon' => $_POST['telefon'],
+        'telefon' => '',
         'email' => $email,
         'email_override' => $emailOverride,
         'position' => $_POST['position'],
-        'bild' => $bild
+        'bild' => $bild,
+        'fields' => []
     ];
 
+    foreach ($types as $type) {
+        $key = $type['key'];
+
+        if ($key === 'email') {
+            continue;
+        }
+
+        $value = trim($_POST[data_type_input_name($key)] ?? '');
+        set_data_type_value($contact, $type, $value);
+    }
+
+    $contacts[] = $contact;
     save_contacts($contacts);
 
     header('Location:/admin');
@@ -62,18 +76,23 @@ include '../includes/header.php';
 <input type="text" name="position" class="form-control">
 </div>
 
+<?php foreach ($types as $type): ?>
+<?php if ($type['key'] !== 'email' && $type['key'] !== 'phone'): ?>
+<?php continue; ?>
+<?php endif; ?>
+<?php if ($type['key'] === 'phone'): ?>
 <div class="col-md-6 mb-3">
-<label class="form-label">Telefon</label>
-<input type="text" name="telefon" class="form-control">
+<label class="form-label"><?= h($type['label']) ?></label>
+<input type="<?= h($type['type']) ?>" name="<?= h(data_type_input_name($type['key'])) ?>" class="form-control">
 </div>
+<?php endif; ?>
+<?php endforeach; ?>
 </div>
 
 <div class="mb-3">
 <label class="form-label">E-Mail</label>
 <input type="email" name="email" id="email" class="form-control" disabled>
-<div class="form-text">
-Live-Vorschau der automatisch generierten Adresse
-</div>
+<div class="form-text">Live-Vorschau der automatisch generierten Adresse</div>
 </div>
 
 <div class="form-check mb-3">
@@ -83,12 +102,19 @@ Automatische E-Mail überschreiben
 </label>
 </div>
 
-<div class="row">
+<?php foreach ($types as $type): ?>
+<?php if (in_array($type['key'], ['email', 'phone'], true)): ?>
+<?php continue; ?>
+<?php endif; ?>
+<div class="mb-3">
+<label class="form-label"><?= h($type['label']) ?></label>
+<input type="<?= h($type['type']) ?>" name="<?= h(data_type_input_name($type['key'])) ?>" class="form-control">
+</div>
+<?php endforeach; ?>
 
-<div class="col-md-6 mb-3">
+<div class="mb-3">
 <label class="form-label">Mitarbeiterfoto</label>
 <input type="file" name="bild" class="form-control" accept=".png,.jpg,.jpeg,.webp">
-</div>
 </div>
 
 <button class="btn btn-success">Speichern</button>
@@ -127,34 +153,14 @@ function generateEmailPreview() {
     let local = '';
 
     switch (emailPattern) {
-        case 'vorname':
-            local = first;
-            break;
-
-        case 'nachname':
-            local = last;
-            break;
-
-        case 'initialen':
-            local = first.substring(0, 1) + last.substring(0, 1);
-            break;
-
-        case 'v.nachname':
-            local = first.substring(0, 1) + '.' + last;
-            break;
-
-        case 'vorname_nachname':
-            local = first + '_' + last;
-            break;
-
-        case 'vornamenachname':
-            local = first + last;
-            break;
-
+        case 'vorname': local = first; break;
+        case 'nachname': local = last; break;
+        case 'initialen': local = first.substring(0, 1) + last.substring(0, 1); break;
+        case 'v.nachname': local = first.substring(0, 1) + '.' + last; break;
+        case 'vorname_nachname': local = first + '_' + last; break;
+        case 'vornamenachname': local = first + last; break;
         case 'vorname.nachname':
-        default:
-            local = first + '.' + last;
-            break;
+        default: local = first + '.' + last; break;
     }
 
     local = local.replace(/^\.+|\.+$/g, '');
