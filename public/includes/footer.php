@@ -25,27 +25,33 @@
 
 <script>
 (function(){
-  const key = 'vcard-admin-theme';
+  const key = 'vcard-admin-theme-mode';
   const html = document.documentElement;
-  const defaultTheme = html.getAttribute('data-bs-theme') || 'light';
-  const apply = function(theme) {
-    html.setAttribute('data-bs-theme', theme);
-    const icon = document.querySelector('#darkToggle i');
-    if (icon) {
-      icon.className = theme === 'dark' ? 'bi bi-sun' : 'bi bi-moon-stars';
-    }
-  };
+  const system = window.matchMedia('(prefers-color-scheme: dark)');
+  const defaultMode = html.getAttribute('data-bs-theme-mode') || 'auto';
+  const label = document.querySelector('[data-theme-mode-label]');
 
-  apply(localStorage.getItem(key) || defaultTheme);
-
-  const btn = document.getElementById('darkToggle');
-  if (btn) {
-    btn.addEventListener('click', function(){
-      const next = html.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
-      localStorage.setItem(key, next);
-      apply(next);
-    });
+  function resolvedTheme(mode) {
+    return mode === 'auto' ? (system.matches ? 'dark' : 'light') : mode;
   }
+
+  function apply(mode, persist) {
+    html.setAttribute('data-bs-theme-mode', mode);
+    html.setAttribute('data-bs-theme', resolvedTheme(mode));
+    if (label) label.textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
+    document.querySelectorAll('[data-theme-value]').forEach(function(item){
+      item.classList.toggle('active', item.dataset.themeValue === mode);
+    });
+    if (persist) localStorage.setItem(key, mode);
+  }
+
+  apply(localStorage.getItem(key) || defaultMode, false);
+  system.addEventListener('change', function(){
+    if ((localStorage.getItem(key) || defaultMode) === 'auto') apply('auto', false);
+  });
+  document.querySelectorAll('[data-theme-value]').forEach(function(item){
+    item.addEventListener('click', function(){ apply(item.dataset.themeValue, true); });
+  });
 })();
 </script>
 </body>
