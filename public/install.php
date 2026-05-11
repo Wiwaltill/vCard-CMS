@@ -111,8 +111,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <div class="mb-4">
 <h1>Digital vCard CMS installieren</h1>
-<p class="text-muted mb-0">Dieser Assistent richtet die wichtigsten Einstellungen für die erste Nutzung ein.</p>
-<p class="text-muted small mb-0">Erkannte Basis-Domain: <strong><?= h($baseDomain) ?></strong></p>
+<p class="text-body-secondary mb-0">Dieser Assistent richtet die wichtigsten Einstellungen für die erste Nutzung ein.</p>
+<p class="text-body-secondary small mb-0">Erkannte Basis-Domain: <strong><?= h($baseDomain) ?></strong></p>
 </div>
 
 <?php if ($errors): ?>
