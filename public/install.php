@@ -15,12 +15,15 @@ $success = false;
 
 $dataDirWritable = is_writable(__DIR__ . '/../data');
 $uploadsWritable = is_writable(__DIR__ . '/uploads');
+$baseDomain = base_domain_from_host();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $companyName = trim($_POST['company_name'] ?? '');
     $companyColor = trim($_POST['company_color'] ?? '#0d6efd');
     $logoLink = trim($_POST['logo_link'] ?? '');
     $githubUrl = trim($_POST['github_url'] ?? '');
+    $homeRedirectUrl = trim($_POST['home_redirect_url'] ?? '');
+    $contactEmail = trim($_POST['contact_email'] ?? '');
     $imprintUrl = trim($_POST['imprint_url'] ?? '');
     $privacyUrl = trim($_POST['privacy_url'] ?? '');
     $emailDomain = strtolower(trim($_POST['email_domain'] ?? ''));
@@ -63,6 +66,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $config['company_color'] = $companyColor;
         $config['logo_link'] = $logoLink;
         $config['github_url'] = $githubUrl;
+        $config['home_redirect_url'] = $homeRedirectUrl;
+        $config['contact_email'] = $contactEmail;
         $config['imprint_url'] = $imprintUrl;
         $config['privacy_url'] = $privacyUrl;
         $config['email_domain'] = $emailDomain;
@@ -107,6 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="mb-4">
 <h1>Digital vCard CMS installieren</h1>
 <p class="text-muted mb-0">Dieser Assistent richtet die wichtigsten Einstellungen für die erste Nutzung ein.</p>
+<p class="text-muted small mb-0">Erkannte Basis-Domain: <strong><?= h($baseDomain) ?></strong></p>
 </div>
 
 <?php if ($errors): ?>
@@ -163,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <div class="mb-3">
 <label class="form-label">Logo-Link</label>
-<input type="url" name="logo_link" class="form-control" value="<?= h($_POST['logo_link'] ?? 'https://example.com') ?>">
+<input type="url" name="logo_link" class="form-control" value="<?= h($_POST['logo_link'] ?? default_url_for_base_domain($baseDomain)) ?>">
 </div>
 
 </div>
@@ -173,20 +179,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="card-header">Links</div>
 <div class="card-body">
 
-<div class="mb-3">
+<div class="row">
+<div class="col-md-6 mb-3">
 <label class="form-label">GitHub Link optional</label>
 <input type="url" name="github_url" class="form-control" value="<?= h($_POST['github_url'] ?? '') ?>">
+</div>
+
+<div class="col-md-6 mb-3">
+<label class="form-label">Startseiten-Weiterleitung</label>
+<input type="url" name="home_redirect_url" class="form-control" value="<?= h($_POST['home_redirect_url'] ?? default_url_for_base_domain($baseDomain)) ?>">
+</div>
+</div>
+
+<div class="row">
+<div class="col-md-6 mb-3">
+<label class="form-label">Sammelmail für nicht gefundene Kontakte</label>
+<input type="email" name="contact_email" class="form-control" value="<?= h($_POST['contact_email'] ?? 'info@' . $baseDomain) ?>">
+</div>
 </div>
 
 <div class="row">
 <div class="col-md-6 mb-3">
 <label class="form-label">Impressum Link</label>
-<input type="url" name="imprint_url" class="form-control" value="<?= h($_POST['imprint_url'] ?? 'https://example.com/imprint') ?>">
+<input type="url" name="imprint_url" class="form-control" value="<?= h($_POST['imprint_url'] ?? default_url_for_base_domain($baseDomain, 'impressum')) ?>">
 </div>
 
 <div class="col-md-6 mb-3">
 <label class="form-label">Datenschutz Link</label>
-<input type="url" name="privacy_url" class="form-control" value="<?= h($_POST['privacy_url'] ?? 'https://example.com/privacy') ?>">
+<input type="url" name="privacy_url" class="form-control" value="<?= h($_POST['privacy_url'] ?? default_url_for_base_domain($baseDomain, 'datenschutz')) ?>">
 </div>
 </div>
 
@@ -202,7 +222,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <label class="form-label">Mail-Domain hinter dem @</label>
 <div class="input-group">
 <span class="input-group-text">@</span>
-<input type="text" name="email_domain" class="form-control" value="<?= h($_POST['email_domain'] ?? 'example.com') ?>" required>
+<input type="text" name="email_domain" class="form-control" value="<?= h($_POST['email_domain'] ?? $baseDomain) ?>" required>
 </div>
 </div>
 
