@@ -75,42 +75,42 @@ include '../includes/header.php';
 
 <div class="row">
 <div class="col-md-8 mb-3">
-<label class="form-label">Firmenname</label>
+<label class="form-label"><?= h(admin_t('company_name', $config)) ?></label>
 <input type="text" name="company_name" value="<?= h($config['company_name']) ?>" class="form-control" required>
 </div>
 
 <div class="col-md-4 mb-3">
-<label class="form-label">Firmenfarbe</label>
+<label class="form-label"><?= h(admin_t('company_color', $config)) ?></label>
 <input type="color" name="company_color" value="<?= h($config['company_color']) ?>" class="form-control form-control-color">
 </div>
 </div>
 
 <div class="mb-3">
-<label class="form-label">Firmenlogo</label>
+<label class="form-label"><?= h(admin_t('company_logo', $config)) ?></label>
 
 <?php if (!empty($config['company_logo'])): ?>
 <div class="mb-2 d-flex align-items-center gap-3">
 <img src="<?= h($config['company_logo']) ?>" height="70" alt="Logo">
-<button type="submit" name="delete_company_logo" value="1" class="btn btn-danger btn-sm" onclick="return confirm('Firmenlogo wirklich löschen?');">
+<button type="submit" name="delete_company_logo" value="1" class="btn btn-danger btn-sm" onclick="return confirm('<?= h(admin_t('company_logo', $config)) ?> <?= h(admin_t('delete_file_confirm', $config)) ?>');">
 <i class="bi bi-trash"></i>
 </button>
 </div>
 <?php endif; ?>
 
 <input type="file" name="company_logo" class="form-control" accept=".png,.jpg,.jpeg,.svg,.webp">
-<div class="form-text">Ein neues Logo ersetzt die alte Datei automatisch.</div>
+<div class="form-text"><?= h(admin_t('logo_replace', $config)) ?></div>
 </div>
 
 <div class="row">
 <div class="col-md-6 mb-3">
-<label class="form-label">Logo-Link</label>
+<label class="form-label"><?= h(admin_t('logo_link', $config)) ?></label>
 <input type="url" name="logo_link" value="<?= h($config['logo_link']) ?>" class="form-control">
 </div>
 
 <div class="col-md-6 mb-3">
-<label class="form-label">Startseiten-Weiterleitung</label>
+<label class="form-label"><?= h(admin_t('home_redirect', $config)) ?></label>
 <input type="url" name="home_redirect_url" value="<?= h($config['home_redirect_url']) ?>" class="form-control">
-<div class="form-text">Diese URL wird geöffnet, wenn die Root-Domain aufgerufen wird.</div>
+<div class="form-text"><?= h(admin_t('home_redirect_help', $config)) ?></div>
 </div>
 </div>
 
@@ -123,24 +123,24 @@ include '../includes/header.php';
 
 <div class="row">
 <div class="col-md-6 mb-3">
-<label class="form-label">GitHub Link</label>
+<label class="form-label"><?= h(admin_t('github_link', $config)) ?></label>
 <input type="url" name="github_url" value="<?= h($config['github_url']) ?>" class="form-control">
 </div>
 
 <div class="col-md-6 mb-3">
-<label class="form-label">Sammelmail für 404-Seite</label>
+<label class="form-label"><?= h(admin_t('contact_email_404', $config)) ?></label>
 <input type="email" name="contact_email" value="<?= h($config['contact_email']) ?>" class="form-control">
 </div>
 </div>
 
 <div class="row">
 <div class="col-md-6 mb-3">
-<label class="form-label">Impressum Link</label>
+<label class="form-label"><?= h(admin_t('imprint_link', $config)) ?></label>
 <input type="url" name="imprint_url" value="<?= h($config['imprint_url']) ?>" class="form-control">
 </div>
 
 <div class="col-md-6 mb-3">
-<label class="form-label">Datenschutz Link</label>
+<label class="form-label"><?= h(admin_t('privacy_link', $config)) ?></label>
 <input type="url" name="privacy_url" value="<?= h($config['privacy_url']) ?>" class="form-control">
 </div>
 </div>
@@ -154,7 +154,7 @@ include '../includes/header.php';
 
 <div class="row">
 <div class="col-md-6 mb-3">
-<label class="form-label">Mail-Domain hinter dem @</label>
+<label class="form-label"><?= h(admin_t('mail_domain', $config)) ?></label>
 <div class="input-group">
 <span class="input-group-text">@</span>
 <input type="text" name="email_domain" value="<?= h($config['email_domain']) ?>" class="form-control" required>
@@ -162,15 +162,15 @@ include '../includes/header.php';
 </div>
 
 <div class="col-md-6 mb-3">
-<label class="form-label">Schema vor dem @</label>
+<label class="form-label"><?= h(admin_t('mail_pattern', $config)) ?></label>
 <select name="email_pattern" class="form-select">
-<option value="vorname" <?= ($config['email_pattern'] === 'vorname') ? 'selected' : '' ?>>Vorname — alex@domain.de</option>
-<option value="nachname" <?= ($config['email_pattern'] === 'nachname') ? 'selected' : '' ?>>Nachname — mustermann@domain.de</option>
-<option value="initialen" <?= ($config['email_pattern'] === 'initialen') ? 'selected' : '' ?>>Initialen — am@domain.de</option>
-<option value="vorname.nachname" <?= ($config['email_pattern'] === 'vorname.nachname') ? 'selected' : '' ?>>Vorname.Nachname — alex.mustermann@domain.de</option>
-<option value="v.nachname" <?= ($config['email_pattern'] === 'v.nachname') ? 'selected' : '' ?>>Initial.Nachname — a.mustermann@domain.de</option>
-<option value="vorname_nachname" <?= ($config['email_pattern'] === 'vorname_nachname') ? 'selected' : '' ?>>Vorname_Nachname — alex_mustermann@domain.de</option>
-<option value="vornamenachname" <?= ($config['email_pattern'] === 'vornamenachname') ? 'selected' : '' ?>>VornameNachname — alexmustermann@domain.de</option>
+<option value="vorname" <?= ($config['email_pattern'] === 'vorname') ? 'selected' : '' ?>><?= h(admin_t('first_name_pattern', $config)) ?> — alex@domain.de</option>
+<option value="nachname" <?= ($config['email_pattern'] === 'nachname') ? 'selected' : '' ?>><?= h(admin_t('last_name_pattern', $config)) ?> — mustermann@domain.de</option>
+<option value="initialen" <?= ($config['email_pattern'] === 'initialen') ? 'selected' : '' ?>><?= h(admin_t('initials_pattern', $config)) ?> — am@domain.de</option>
+<option value="vorname.nachname" <?= ($config['email_pattern'] === 'vorname.nachname') ? 'selected' : '' ?>><?= h(admin_t('first_last_pattern', $config)) ?> — alex.mustermann@domain.de</option>
+<option value="v.nachname" <?= ($config['email_pattern'] === 'v.nachname') ? 'selected' : '' ?>><?= h(admin_t('initial_last_pattern', $config)) ?> — a.mustermann@domain.de</option>
+<option value="vorname_nachname" <?= ($config['email_pattern'] === 'vorname_nachname') ? 'selected' : '' ?>><?= h(admin_t('first_last_underscore_pattern', $config)) ?> — alex_mustermann@domain.de</option>
+<option value="vornamenachname" <?= ($config['email_pattern'] === 'vornamenachname') ? 'selected' : '' ?>><?= h(admin_t('firstlast_pattern', $config)) ?> — alexmustermann@domain.de</option>
 </select>
 </div>
 </div>
@@ -184,14 +184,14 @@ include '../includes/header.php';
 
 <div class="row">
 <div class="col-md-6 mb-3">
-<label class="form-label">Admin Benutzername</label>
+<label class="form-label"><?= h(admin_t('admin_username', $config)) ?></label>
 <input type="text" name="admin_user" value="<?= h($config['admin_user']) ?>" class="form-control" required>
 </div>
 
 <div class="col-md-6 mb-3">
-<label class="form-label">Neues Passwort</label>
+<label class="form-label"><?= h(admin_t('new_password', $config)) ?></label>
 <input type="password" name="admin_password" class="form-control" autocomplete="new-password">
-<div class="form-text">Leer lassen, wenn das Passwort nicht geändert werden soll.</div>
+<div class="form-text"><?= h(admin_t('password_empty_help', $config)) ?></div>
 </div>
 </div>
 
