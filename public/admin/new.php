@@ -71,7 +71,7 @@ include '../includes/header.php';
 <label class="form-label">E-Mail</label>
 <input type="email" name="email" id="email" class="form-control" disabled>
 <div class="form-text">
-Automatisch: <?= h(email_pattern_label($config['email_pattern'])) ?> mit @<?= h($config['email_domain']) ?>
+Live-Vorschau der automatisch generierten Adresse
 </div>
 </div>
 
@@ -98,17 +98,93 @@ Automatische E-Mail überschreiben
 <script>
 const overrideCheckbox = document.getElementById('email_override');
 const emailInput = document.getElementById('email');
+const firstNameInput = document.getElementById('vorname');
+const lastNameInput = document.getElementById('nachname');
+
+const emailDomain = <?= json_encode($config['email_domain']) ?>;
+const emailPattern = <?= json_encode($config['email_pattern']) ?>;
+
+function normalizeEmailPart(value) {
+    return value
+        .trim()
+        .toLowerCase()
+        .replaceAll('ä', 'ae')
+        .replaceAll('ö', 'oe')
+        .replaceAll('ü', 'ue')
+        .replaceAll('ß', 'ss')
+        .replace(/[^a-z0-9]+/g, '');
+}
+
+function generateEmailPreview() {
+    const first = normalizeEmailPart(firstNameInput.value);
+    const last = normalizeEmailPart(lastNameInput.value);
+
+    if (!first && !last) {
+        return '';
+    }
+
+    let local = '';
+
+    switch (emailPattern) {
+        case 'vorname':
+            local = first;
+            break;
+
+        case 'nachname':
+            local = last;
+            break;
+
+        case 'initialen':
+            local = first.substring(0, 1) + last.substring(0, 1);
+            break;
+
+        case 'v.nachname':
+            local = first.substring(0, 1) + '.' + last;
+            break;
+
+        case 'vorname_nachname':
+            local = first + '_' + last;
+            break;
+
+        case 'vornamenachname':
+            local = first + last;
+            break;
+
+        case 'vorname.nachname':
+        default:
+            local = first + '.' + last;
+            break;
+    }
+
+    local = local.replace(/^\.+|\.+$/g, '');
+
+    if (!local) {
+        return '';
+    }
+
+    return local + '@' + emailDomain.replace(/^@/, '');
+}
+
+function updateEmailPreview() {
+    if (!overrideCheckbox.checked) {
+        emailInput.value = generateEmailPreview();
+    }
+}
 
 function toggleEmailField() {
     emailInput.disabled = !overrideCheckbox.checked;
 
     if (!overrideCheckbox.checked) {
-        emailInput.value = '';
+        updateEmailPreview();
     }
 }
 
 overrideCheckbox.addEventListener('change', toggleEmailField);
+firstNameInput.addEventListener('input', updateEmailPreview);
+lastNameInput.addEventListener('input', updateEmailPreview);
+
 toggleEmailField();
+updateEmailPreview();
 </script>
 
 <?php include '../includes/footer.php'; ?>
