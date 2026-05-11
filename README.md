@@ -3,8 +3,8 @@
 [![stars - vCard-CMS](https://img.shields.io/github/stars/Wiwaltill/vCard-CMS?style=social)](https://github.com/Wiwaltill/vCard-CMS)
 [![forks - vCard-CMS](https://img.shields.io/github/forks/Wiwaltill/vCard-CMS?style=social)](https://github.com/Wiwaltill/vCard-CMS)
 
-[![GitHub release](https://img.shields.io/github/release/Wiwaltill/vCard-CMS?include_prereleases=&sort=semver&color=blue)](https://github.com/Wiwaltill/vCard-CMS/releases/)
-[![License](https://img.shields.io/badge/License-MIT-blue)](#license)
+[![GitHub release](https://img.shields.io/github/v/release/Wiwaltill/vCard-CMS)](https://github.com/Wiwaltill/vCard-CMS/releases/)
+[![License](https://img.shields.io/github/license/Wiwaltill/vCard-CMS)](https://github.com/Wiwaltill/vCard-CMS/blob/main/LICENSE)
 [![issues - vCard-CMS](https://img.shields.io/github/issues/Wiwaltill/vCard-CMS)](https://github.com/Wiwaltill/vCard-CMS/issues)
 
 
