@@ -237,6 +237,17 @@ function h(?string $value): string
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
 }
 
+
+function vcard_escape(?string $value): string
+{
+    $value = $value ?? '';
+    $value = str_replace("\\", "\\\\", $value);
+    $value = str_replace([";", ",", "\r", "\n"], ["\;", "\,", "", "\\n"], $value);
+
+    return $value;
+}
+
+
 function current_url(): string
 {
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
