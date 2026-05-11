@@ -13,14 +13,14 @@ $token = api_token($config);
 include '../includes/header.php';
 ?>
 <h1 class="mb-4">REST API</h1>
-<?php if (isset($_GET['saved'])): ?><div class="alert alert-success">API-Einstellungen gespeichert.</div><?php endif; ?>
+<?php if (isset($_GET['saved'])): ?><div class="alert alert-success"><?= h(admin_t('api_saved', $config)) ?></div><?php endif; ?>
 <div class="card shadow-sm"><div class="card-body">
 <form method="post">
-<div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" name="api_enabled" id="api_enabled" <?= !empty($config['api_enabled'])?'checked':'' ?>><label class="form-check-label" for="api_enabled">REST API aktivieren</label></div>
-<label class="form-label">API Token</label><input class="form-control font-monospace mb-3" value="<?= h($token) ?>" readonly>
-<button class="btn btn-success">Speichern</button> <button class="btn btn-outline-danger" name="regen" value="1">Token neu erzeugen</button>
+<div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" name="api_enabled" id="api_enabled" <?= !empty($config['api_enabled'])?'checked':'' ?>><label class="form-check-label" for="api_enabled"><?= h(admin_t('api_enable', $config)) ?></label></div>
+<label class="form-label"><?= h(admin_t('api_token', $config)) ?></label><input class="form-control font-monospace mb-3" value="<?= h($token) ?>" readonly>
+<button class="btn btn-success"><?= h(admin_t('save', $config)) ?></button> <button class="btn btn-outline-danger" name="regen" value="1"><?= h(admin_t('regen_token', $config)) ?></button>
 </form>
-<hr><p class="mb-2">Endpoints mit Header <code>X-API-Token</code>:</p>
+<hr><p class="mb-2"><?= h(admin_t('endpoints_with_header', $config)) ?> <code>X-API-Token</code>:</p>
 <pre class="bg-body-tertiary border p-3 rounded text-body font-monospace">GET    /api/contacts
 GET    /api/contacts/{id}
 POST   /api/contacts
