@@ -3,7 +3,7 @@ require_once __DIR__ . '/functions.php';
 $config = get_config();
 ?>
 <!DOCTYPE html>
-<html lang="de">
+<html lang="<?= h(app_lang($config)) ?>" data-bs-theme="<?= darkmode_default($config) ? 'dark' : 'light' ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow,noarchive">
@@ -47,6 +47,29 @@ footer {
 .navbar {
     background-color: var(--company-color) !important;
 }
+.card.bg-white {
+    background-color: var(--bs-body-bg) !important;
+}
+
+[data-bs-theme="dark"] .navbar {
+    background-color: var(--company-color) !important;
+}
+
+[data-bs-theme="dark"] .btn-light {
+    --bs-btn-color: var(--bs-body-color);
+    --bs-btn-bg: var(--bs-tertiary-bg);
+    --bs-btn-border-color: var(--bs-border-color);
+}
+
+pre, code {
+    color: var(--bs-body-color);
+}
+
+pre {
+    background-color: var(--bs-tertiary-bg);
+    border-color: var(--bs-border-color);
+}
+
 </style>
 </head>
 
@@ -80,6 +103,29 @@ footer {
 <a class="nav-link" href="/admin/datatypes">
 <i class="bi bi-list-check"></i> Datentypen
 </a>
+</li>
+
+
+<li class="nav-item">
+<a class="nav-link" href="/admin/import_export">
+<i class="bi bi-filetype-csv"></i> CSV
+</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="/admin/api">
+<i class="bi bi-braces"></i> API
+</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="/admin/backup">
+<i class="bi bi-archive"></i> Backup
+</a>
+</li>
+
+<li class="nav-item">
+<button class="btn btn-sm btn-outline-light ms-lg-2" type="button" id="darkToggle"><i class="bi bi-moon-stars"></i></button>
 </li>
 
 <li class="nav-item">
