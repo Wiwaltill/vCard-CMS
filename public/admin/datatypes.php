@@ -28,7 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'enabled' => isset($_POST['enabled'][$key]),
                 'builtin' => !empty($type['builtin']),
                 'sort' => (int)($_POST['sort'][$key] ?? $type['sort']),
-                'vcard' => trim($_POST['vcard'][$key] ?? ($type['vcard'] ?? ''))
+                'vcard' => trim($_POST['vcard'][$key] ?? ($type['vcard'] ?? '')),
+                'platform' => $_POST['platform'][$key] ?? ($type['platform'] ?? '')
             ];
         }
 
@@ -53,7 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'enabled' => true,
                 'builtin' => false,
                 'sort' => ((count($types) + 1) * 10),
-                'vcard' => ''
+                'vcard' => '',
+                'platform' => $_POST['new_platform'] ?? ''
             ];
 
             $config['data_types'] = normalize_data_types($types);
@@ -75,6 +77,12 @@ include '../includes/header.php';
 
 <h1 class="mb-4">Datentypen</h1>
 
+<div class="alert alert-info">
+<strong>Hinweis zu vCard-Feldern:</strong>
+Mehr Informationen zu möglichen vCard-Feldern und deren Bedeutung findest du auf
+<a href="https://de.wikipedia.org/wiki/VCard" target="_blank" rel="noopener">Wikipedia: vCard</a>.
+</div>
+
 <?php if ($success): ?>
 <div class="alert alert-success">Datentypen gespeichert.</div>
 <?php endif; ?>
@@ -94,6 +102,7 @@ include '../includes/header.php';
 <th style="width:90px;">Sort.</th>
 <th>Bezeichnung</th>
 <th style="width:170px;">Typ</th>
+<th style="width:170px;">Plattform</th>
 <th style="width:110px;">Anzeigen</th>
 <th style="width:190px;">vCard-Feld optional</th>
 <th style="width:90px;">Löschen</th>
@@ -118,10 +127,23 @@ include '../includes/header.php';
 <option value="tel" <?= $type['type'] === 'tel' ? 'selected' : '' ?>>Telefon</option>
 <option value="email" <?= $type['type'] === 'email' ? 'selected' : '' ?>>E-Mail</option>
 <option value="url" <?= $type['type'] === 'url' ? 'selected' : '' ?>>URL</option>
+<option value="social" <?= $type['type'] === 'social' ? 'selected' : '' ?>>Social Media</option>
 </select>
 <?php if (!empty($type['builtin'])): ?>
 <input type="hidden" name="type[<?= h($type['key']) ?>]" value="<?= h($type['type']) ?>">
 <?php endif; ?>
+</td>
+
+<td>
+<select name="platform[<?= h($type['key']) ?>]" class="form-select">
+<option value="" <?= empty($type['platform']) ? 'selected' : '' ?>>—</option>
+<option value="facebook" <?= ($type['platform'] ?? '') === 'facebook' ? 'selected' : '' ?>>Facebook</option>
+<option value="instagram" <?= ($type['platform'] ?? '') === 'instagram' ? 'selected' : '' ?>>Instagram</option>
+<option value="linkedin" <?= ($type['platform'] ?? '') === 'linkedin' ? 'selected' : '' ?>>LinkedIn</option>
+<option value="tiktok" <?= ($type['platform'] ?? '') === 'tiktok' ? 'selected' : '' ?>>TikTok</option>
+<option value="x" <?= ($type['platform'] ?? '') === 'x' ? 'selected' : '' ?>>X</option>
+<option value="youtube" <?= ($type['platform'] ?? '') === 'youtube' ? 'selected' : '' ?>>YouTube</option>
+</select>
 </td>
 
 <td class="text-center">
@@ -175,7 +197,24 @@ Die Reihenfolge wird über die Sortierung bestimmt. Systemfelder können nicht g
 <option value="tel">Telefon</option>
 <option value="email">E-Mail</option>
 <option value="url">URL</option>
+<option value="social">Social Media</option>
 </select>
+</div>
+</div>
+
+<div class="mb-3">
+<label class="form-label">Social-Media-Plattform optional</label>
+<select name="new_platform" class="form-select">
+<option value="">—</option>
+<option value="facebook">Facebook</option>
+<option value="instagram">Instagram</option>
+<option value="linkedin">LinkedIn</option>
+<option value="tiktok">TikTok</option>
+<option value="x">X</option>
+<option value="youtube">YouTube</option>
+</select>
+<div class="form-text">
+Bei Social Media reicht im Kontaktformular später der Username. Beispiel: <code>max.mustermann</code>
 </div>
 </div>
 
