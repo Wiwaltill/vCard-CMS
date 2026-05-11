@@ -120,6 +120,7 @@ include '../includes/header.php';
 <select name="email_pattern" class="form-select">
 <option value="vorname" <?= ($config['email_pattern'] === 'vorname') ? 'selected' : '' ?>>Vorname — alex@domain.de</option>
 <option value="nachname" <?= ($config['email_pattern'] === 'nachname') ? 'selected' : '' ?>>Nachname — mustermann@domain.de</option>
+<option value="initialen" <?= ($config['email_pattern'] === 'initialen') ? 'selected' : '' ?>>Initialen — am@domain.de</option>
 <option value="vorname.nachname" <?= ($config['email_pattern'] === 'vorname.nachname') ? 'selected' : '' ?>>Vorname.Nachname — alex.mustermann@domain.de</option>
 <option value="v.nachname" <?= ($config['email_pattern'] === 'v.nachname') ? 'selected' : '' ?>>Initial.Nachname — a.mustermann@domain.de</option>
 <option value="vorname_nachname" <?= ($config['email_pattern'] === 'vorname_nachname') ? 'selected' : '' ?>>Vorname_Nachname — alex_mustermann@domain.de</option>

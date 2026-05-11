@@ -117,6 +117,10 @@ function generate_email(string $vorname, string $nachname, array $config): strin
         case 'nachname':
             $local = $last;
             break;
+        case 'initialen':
+            $local = substr($first, 0, 1) . substr($last, 0, 1);
+            break;
+
         case 'v.nachname':
             $local = substr($first, 0, 1) . '.' . $last;
             break;
@@ -141,6 +145,7 @@ function email_pattern_label(string $pattern): string
         'vorname' => 'vorname@domain.de',
         'nachname' => 'nachname@domain.de',
         'vorname.nachname' => 'vorname.nachname@domain.de',
+        'initialen' => 'am@domain.de',
         'v.nachname' => 'v.nachname@domain.de',
         'vorname_nachname' => 'vorname_nachname@domain.de',
         'vornamenachname' => 'vornamenachname@domain.de'
