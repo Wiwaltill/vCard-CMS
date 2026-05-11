@@ -3,6 +3,7 @@
 require_once '../includes/functions.php';
 require_login();
 
+$config = get_config();
 $contacts = load_json('contacts.json', []);
 $id = $_GET['id'] ?? '';
 $current = null;
@@ -27,6 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nachname = trim($_POST['nachname']);
 
     $newId = make_contact_id($vorname, $nachname, $contacts, $id);
+    $email = generate_email($vorname, $nachname, $config);
 
     if (isset($_POST['delete_bild']) && !empty($contacts[$currentKey]['bild'])) {
         delete_public_file($contacts[$currentKey]['bild']);
@@ -39,7 +41,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!empty($contacts[$currentKey]['bild'])) {
             delete_public_file($contacts[$currentKey]['bild']);
         }
-
         $contacts[$currentKey]['bild'] = $bild;
     }
 
@@ -47,14 +48,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $contacts[$currentKey]['vorname'] = $vorname;
     $contacts[$currentKey]['nachname'] = $nachname;
     $contacts[$currentKey]['telefon'] = $_POST['telefon'];
-    $contacts[$currentKey]['email'] = $_POST['email'];
+    $contacts[$currentKey]['email'] = $email;
     $contacts[$currentKey]['position'] = $_POST['position'];
 
     save_contacts($contacts);
 
-    header('Location:index.php');
+    header('Location:/admin');
     exit;
 }
+
+$currentEmail = generate_email($current['vorname'], $current['nachname'], $config);
 
 include '../includes/header.php';
 
@@ -75,6 +78,12 @@ include '../includes/header.php';
 </div>
 
 <div class="mb-3">
+<label class="form-label">Automatische E-Mail</label>
+<input type="text" value="<?= h($currentEmail) ?>" class="form-control" disabled>
+<div class="form-text">Die E-Mail wird beim Speichern automatisch nach dem eingestellten Schema aktualisiert.</div>
+</div>
+
+<div class="mb-3">
 <label class="form-label">Position</label>
 <input type="text" name="position" value="<?= h($current['position']) ?>" class="form-control">
 </div>
@@ -85,42 +94,23 @@ include '../includes/header.php';
 </div>
 
 <div class="mb-3">
-<label class="form-label">E-Mail</label>
-<input type="email" name="email" value="<?= h($current['email']) ?>" class="form-control">
-</div>
-
-<div class="mb-3">
 <label class="form-label">Mitarbeiterfoto</label>
 
 <?php if (!empty($current['bild'])): ?>
 <div class="mb-2 d-flex align-items-center gap-3">
 <img src="<?= h($current['bild']) ?>" height="90" class="rounded" alt="Mitarbeiterfoto">
-
-<button
-type="submit"
-name="delete_bild"
-value="1"
-class="btn btn-danger btn-sm"
-onclick="return confirm('Mitarbeiterfoto wirklich löschen?');"
->
+<button type="submit" name="delete_bild" value="1" class="btn btn-danger btn-sm" onclick="return confirm('Mitarbeiterfoto wirklich löschen?');">
 <i class="bi bi-trash"></i>
 </button>
 </div>
 <?php endif; ?>
 
 <input type="file" name="bild" class="form-control" accept=".png,.jpg,.jpeg,.webp">
-<div class="form-text">
-Wenn ein neues Bild hochgeladen wird, wird die alte Datei automatisch vom Server gelöscht.
-</div>
+<div class="form-text">Wenn ein neues Bild hochgeladen wird, wird die alte Datei automatisch vom Server gelöscht.</div>
 </div>
 
-<button class="btn btn-success">
-Speichern
-</button>
-
-<a href="index.php" class="btn btn-secondary">
-Abbrechen
-</a>
+<button class="btn btn-success">Speichern</button>
+<a href="/admin" class="btn btn-secondary">Abbrechen</a>
 
 </form>
 
