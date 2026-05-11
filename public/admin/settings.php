@@ -15,6 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $config['logo_link'] = trim($_POST['logo_link']);
     $config['privacy_url'] = trim($_POST['privacy_url']);
     $config['imprint_url'] = trim($_POST['imprint_url']);
+    $config['home_redirect_url'] = trim($_POST['home_redirect_url']);
+    $config['contact_email'] = trim($_POST['contact_email']);
     $config['email_domain'] = strtolower(trim($_POST['email_domain']));
     $config['email_domain'] = preg_replace('/^@/', '', $config['email_domain']);
     $config['email_pattern'] = $_POST['email_pattern'];
@@ -94,9 +96,17 @@ include '../includes/header.php';
 <div class="form-text">Ein neues Logo ersetzt die alte Datei automatisch.</div>
 </div>
 
-<div class="mb-3">
+<div class="row">
+<div class="col-md-6 mb-3">
 <label class="form-label">Logo-Link</label>
 <input type="url" name="logo_link" value="<?= h($config['logo_link']) ?>" class="form-control">
+</div>
+
+<div class="col-md-6 mb-3">
+<label class="form-label">Startseiten-Weiterleitung</label>
+<input type="url" name="home_redirect_url" value="<?= h($config['home_redirect_url']) ?>" class="form-control">
+<div class="form-text">Diese URL wird geöffnet, wenn die Root-Domain aufgerufen wird.</div>
+</div>
 </div>
 
 </div>
@@ -106,9 +116,16 @@ include '../includes/header.php';
 <div class="card-header">Links</div>
 <div class="card-body">
 
-<div class="mb-3">
+<div class="row">
+<div class="col-md-6 mb-3">
 <label class="form-label">GitHub Link</label>
 <input type="url" name="github_url" value="<?= h($config['github_url']) ?>" class="form-control">
+</div>
+
+<div class="col-md-6 mb-3">
+<label class="form-label">Sammelmail für 404-Seite</label>
+<input type="email" name="contact_email" value="<?= h($config['contact_email']) ?>" class="form-control">
+</div>
 </div>
 
 <div class="row">
