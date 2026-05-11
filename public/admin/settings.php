@@ -21,6 +21,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $config['email_domain'] = preg_replace('/^@/', '', $config['email_domain']);
     $config['email_pattern'] = $_POST['email_pattern'];
     $config['admin_user'] = trim($_POST['admin_user']);
+    $config['language'] = in_array(($_POST['language'] ?? 'de'), ['de','en'], true) ? $_POST['language'] : 'de';
+    $config['theme'] = in_array(($_POST['theme'] ?? 'classic'), ['classic','minimal','glass'], true) ? $_POST['theme'] : 'classic';
+    $config['darkmode_default'] = isset($_POST['darkmode_default']);
+    $config['pwa_enabled'] = isset($_POST['pwa_enabled']);
 
     if (!empty($_POST['admin_password'])) {
         $config['admin_password_hash'] = password_hash($_POST['admin_password'], PASSWORD_DEFAULT);
@@ -190,6 +194,19 @@ include '../includes/header.php';
 </div>
 </div>
 
+</div>
+</div>
+
+
+<div class="card bg-white shadow-sm mb-4">
+<div class="card-header">Darstellung & Sprache</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-3 mb-3"><label class="form-label">Sprache</label><select name="language" class="form-select"><option value="de" <?= ($config['language'] ?? 'de') === 'de' ? 'selected' : '' ?>>Deutsch</option><option value="en" <?= ($config['language'] ?? 'de') === 'en' ? 'selected' : '' ?>>English</option></select></div>
+<div class="col-md-3 mb-3"><label class="form-label">Theme</label><select name="theme" class="form-select"><option value="classic" <?= ($config['theme'] ?? 'classic') === 'classic' ? 'selected' : '' ?>>Classic</option><option value="minimal" <?= ($config['theme'] ?? 'classic') === 'minimal' ? 'selected' : '' ?>>Minimal</option><option value="glass" <?= ($config['theme'] ?? 'classic') === 'glass' ? 'selected' : '' ?>>Glass</option></select></div>
+<div class="col-md-3 mb-3 d-flex align-items-end"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="darkmode_default" id="darkmode_default" <?= !empty($config['darkmode_default']) ? 'checked' : '' ?>><label class="form-check-label" for="darkmode_default">Darkmode als Standard</label></div></div>
+<div class="col-md-3 mb-3 d-flex align-items-end"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="pwa_enabled" id="pwa_enabled" <?= !empty($config['pwa_enabled']) ? 'checked' : '' ?>><label class="form-check-label" for="pwa_enabled">PWA aktivieren</label></div></div>
+</div>
 </div>
 </div>
 
