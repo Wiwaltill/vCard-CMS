@@ -57,7 +57,7 @@ include '../includes/header.php';
         <div class="card shadow-sm">
             <div class="card-header"><?= h(admin_t('create_backup', $config)) ?></div>
             <div class="card-body">
-                <form method="post" id="createBackupForm"><input type="hidden" name="action" value="create">
+                <form method="post" target="backupDownloadFrame" data-reload-after-download="1"><input type="hidden" name="action" value="create">
                     <p><?= h(admin_t('backup_export_help', $config)) ?></p><button class="btn btn-primary"><i class="bi bi-archive"></i> <?= h(admin_t('download_backup', $config)) ?></button>
                 </form>
             </div>
@@ -97,7 +97,7 @@ include '../includes/header.php';
                                 <td><?= h(format_bytes((int)$backup['size'])) ?></td>
                                 <td>
                                     <div class="d-flex gap-2">
-                                        <form method="post">
+                                        <form method="post" target="backupDownloadFrame">
                                             <input type="hidden" name="action" value="download_stored">
                                             <input type="hidden" name="file" value="<?= h($backup['name']) ?>">
                                             <button class="btn btn-primary btn-sm" title="<?= h(admin_t('download_backup', $config)) ?>"><i class="bi bi-download"></i></button>
@@ -122,49 +122,23 @@ include '../includes/header.php';
         <?php endif; ?>
     </div>
 </div>
+<iframe name="backupDownloadFrame" class="d-none" id="backupDownloadFrame"></iframe>
 <script>
 (function () {
-    const form = document.getElementById('createBackupForm');
-    if (!form) return;
+    const frame = document.getElementById('backupDownloadFrame');
+    if (!frame) return;
 
-    form.addEventListener('submit', async (event) => {
-        event.preventDefault();
+    let shouldReload = false;
+    document.querySelectorAll('form[data-reload-after-download="1"]').forEach((form) => {
+        form.addEventListener('submit', () => {
+            shouldReload = true;
+        });
+    });
 
-        const button = form.querySelector('button[type="submit"], button:not([type])');
-        if (button) button.disabled = true;
-
-        try {
-            const response = await fetch(form.action || window.location.href, {
-                method: 'POST',
-                body: new FormData(form),
-                credentials: 'same-origin'
-            });
-
-            if (!response.ok) {
-                throw new Error('Download failed');
-            }
-
-            const blob = await response.blob();
-            const disposition = response.headers.get('Content-Disposition') || '';
-            const fileNameMatch = disposition.match(/filename="?([^";]+)"?/i);
-            const fileName = fileNameMatch ? fileNameMatch[1] : 'backup.zip';
-
-            const url = URL.createObjectURL(blob);
-            const downloadLink = document.createElement('a');
-            downloadLink.href = url;
-            downloadLink.download = fileName;
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            downloadLink.remove();
-            URL.revokeObjectURL(url);
-
-            window.location.reload();
-        } catch (error) {
-            console.error(error);
-            window.location.reload();
-        } finally {
-            if (button) button.disabled = false;
-        }
+    frame.addEventListener('load', () => {
+        if (!shouldReload) return;
+        shouldReload = false;
+        window.location.reload();
     });
 })();
 </script>
