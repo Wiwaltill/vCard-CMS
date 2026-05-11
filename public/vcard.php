@@ -1,6 +1,7 @@
 <?php
 
 require_once 'includes/functions.php';
+require_installed();
 
 $config = get_config();
 $contacts = load_json('contacts.json', []);
