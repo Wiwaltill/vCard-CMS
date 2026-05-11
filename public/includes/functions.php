@@ -741,7 +741,7 @@ function admin_t(string $key, ?array $config = null): string
             'username'=>'Benutzername','password'=>'Passwort','remember_login'=>'Eingeloggt bleiben','login'=>'Einloggen','login_failed'=>'Login fehlgeschlagen.',
             'company_name'=>'Firmenname','company_color'=>'Firmenfarbe','company_logo'=>'Firmenlogo','logo_delete_confirm'=>'Firmenlogo wirklich löschen?','logo_replace'=>'Ein neues Logo ersetzt die alte Datei automatisch.','logo_link'=>'Logo-Link','home_redirect'=>'Startseiten-Weiterleitung','home_redirect_help'=>'Diese URL wird geöffnet, wenn die Root-Domain aufgerufen wird.','github_link'=>'GitHub Link','contact_email_404'=>'Sammelmail für 404-Seite','imprint_link'=>'Impressum Link','privacy_link'=>'Datenschutz Link','mail_domain'=>'Mail-Domain hinter dem @','mail_pattern'=>'Schema vor dem @','admin_username'=>'Admin Benutzername','new_password'=>'Neues Passwort','password_empty_help'=>'Leer lassen, wenn das Passwort nicht geändert werden soll.',
             'api_saved'=>'API-Einstellungen gespeichert.','api_enable'=>'REST API aktivieren','api_token'=>'API Token','regen_token'=>'Token neu erzeugen','endpoints_with_header'=>'Endpoints mit Header',
-            'backup_restore'=>'Backup / Restore','create_backup'=>'Backup erstellen','backup_export_help'=>'Exportiert Konfiguration, Kontakte und Uploads als ZIP.','download_backup'=>'Backup herunterladen','restore'=>'Restore','restore_confirm'=>'Backup wirklich einspielen? Bestehende Daten werden überschrieben.','restore_backup'=>'Backup wiederherstellen',
+            'backup_restore'=>'Backup / Restore','create_backup'=>'Backup erstellen','backup_export_help'=>'Exportiert Konfiguration, Kontakte und Uploads als ZIP.','download_backup'=>'Backup herunterladen','restore'=>'Restore','restore_confirm'=>'Backup wirklich einspielen? Bestehende Daten werden überschrieben.','restore_backup'=>'Backup wiederherstellen','stored_backups'=>'Gespeicherte Backups','backup_file'=>'Datei','created_at'=>'Erstellt am','file_size'=>'Größe','no_backups'=>'Noch keine gespeicherten Backups vorhanden.','delete_backup_confirm'=>'Backup wirklich vom Webserver löschen?','backup_deleted'=>'Backup wurde gelöscht.','backup_delete_failed'=>'Backup konnte nicht gelöscht werden.','backup_restored'=>'Backup wurde wiederhergestellt.','backup_restore_failed'=>'Backup konnte nicht wiederhergestellt werden.','backup_created'=>'Backup wurde erstellt.',
             'datatypes_saved'=>'Datentypen gespeichert.','vcard_fields_note'=>'Hinweis zu vCard-Feldern:','vcard_fields_help'=>'Mehr Informationen zu möglichen vCard-Feldern und deren Bedeutung findest du auf ','sort_and_show_datatypes'=>'Datentypen sortieren und anzeigen','order'=>'Reihenfolge','label'=>'Bezeichnung','type'=>'Typ','show'=>'Anzeigen','vcard_field_optional'=>'vCard-Feld optional','system_field'=>'Systemfeld','drag_help'=>'Die Reihenfolge kann per Drag & Drop geändert werden. Systemfelder können nicht gelöscht, aber ausgeblendet werden.','add_datatype'=>'Neuen Datentyp hinzufügen','add_datatype_button'=>'Datentyp hinzufügen','social_platform'=>'Social-Media-Plattform','please_choose'=>'Bitte wählen','social_auto_help'=>'Bei Social Media werden Bezeichnung, Key und vCard-Feld automatisch gesetzt, z.B.','social_username_help'=>'Bei Social Media reicht im Kontaktformular später der Username. Beispiel:',
             'text'=>'Text','website'=>'Website','social_media'=>'Social Media','regen_token'=>'Token neu erzeugen','login_title'=>'Admin Login','first_name_pattern'=>'Vorname','last_name_pattern'=>'Nachname','initials_pattern'=>'Initialen','first_last_pattern'=>'Vorname.Nachname','initial_last_pattern'=>'Initial.Nachname','first_last_underscore_pattern'=>'Vorname_Nachname','firstlast_pattern'=>'VornameNachname','key'=>'Key','vcard_field'=>'vCard-Feld','csv_import_export'=>'CSV Import/Export','export_contacts_csv'=>'Kontakte als CSV exportieren','import_csv'=>'CSV importieren','csv_import_help'=>'Trennzeichen: Semikolon. Vorhandene Kontakte werden über die Spalte id aktualisiert.','start_import'=>'Import starten'
         ],
@@ -753,7 +753,7 @@ function admin_t(string $key, ?array $config = null): string
             'username'=>'Username','password'=>'Password','remember_login'=>'Stay signed in','login'=>'Log in','login_failed'=>'Login failed.',
             'company_name'=>'Company name','company_color'=>'Company color','company_logo'=>'Company logo','logo_delete_confirm'=>'Really delete company logo?','logo_replace'=>'A new logo automatically replaces the old file.','logo_link'=>'Logo link','home_redirect'=>'Homepage redirect','home_redirect_help'=>'This URL opens when the root domain is requested.','github_link'=>'GitHub link','contact_email_404'=>'Contact email for 404 page','imprint_link'=>'Legal notice link','privacy_link'=>'Privacy link','mail_domain'=>'Mail domain after @','mail_pattern'=>'Pattern before @','admin_username'=>'Admin username','new_password'=>'New password','password_empty_help'=>'Leave empty if the password should not be changed.',
             'api_saved'=>'API settings saved.','api_enable'=>'Enable REST API','api_token'=>'API token','regen_token'=>'Regenerate token','endpoints_with_header'=>'Endpoints with header',
-            'backup_restore'=>'Backup / Restore','create_backup'=>'Create backup','backup_export_help'=>'Exports configuration, contacts and uploads as ZIP.','download_backup'=>'Download backup','restore'=>'Restore','restore_confirm'=>'Really restore backup? Existing data will be overwritten.','restore_backup'=>'Restore backup',
+            'backup_restore'=>'Backup / Restore','create_backup'=>'Create backup','backup_export_help'=>'Exports configuration, contacts and uploads as ZIP.','download_backup'=>'Download backup','restore'=>'Restore','restore_confirm'=>'Really restore backup? Existing data will be overwritten.','restore_backup'=>'Restore backup','stored_backups'=>'Stored backups','backup_file'=>'File','created_at'=>'Created at','file_size'=>'Size','no_backups'=>'No stored backups yet.','delete_backup_confirm'=>'Really delete backup from the webserver?','backup_deleted'=>'Backup deleted.','backup_delete_failed'=>'Backup could not be deleted.','backup_restored'=>'Backup restored.','backup_restore_failed'=>'Backup could not be restored.','backup_created'=>'Backup created.',
             'datatypes_saved'=>'Data types saved.','vcard_fields_note'=>'Note about vCard fields:','vcard_fields_help'=>'More information about possible vCard fields and their meaning is available on ','sort_and_show_datatypes'=>'Sort and display data types','order'=>'Order','label'=>'Label','type'=>'Type','show'=>'Show','vcard_field_optional'=>'vCard field','system_field'=>'System field','drag_help'=>'The order can be changed by drag & drop. System fields cannot be deleted, but can be hidden.','add_datatype'=>'Add new data type','add_datatype_button'=>'Add data type','social_platform'=>'Social media platform','please_choose'=>'Please choose','social_auto_help'=>'','social_username_help'=>'For social media, the username is enough in the contact form later. Example:',
             'text'=>'Text','website'=>'Website','social_media'=>'Social Media','regen_token'=>'Regenerate token','login_title'=>'Admin login','first_name_pattern'=>'First name','last_name_pattern'=>'Last name','initials_pattern'=>'Initials','first_last_pattern'=>'First.Last','initial_last_pattern'=>'Initial.Last','first_last_underscore_pattern'=>'First_Last','firstlast_pattern'=>'FirstLast','key'=>'Key','vcard_field'=>'vCard field','csv_import_export'=>'CSV Import/Export','export_contacts_csv'=>'Export contacts as CSV','import_csv'=>'Import CSV','csv_import_help'=>'Delimiter: semicolon. Existing contacts are updated using the id column.','start_import'=>'Start import'
         ],
@@ -849,6 +849,50 @@ function make_backup_zip(): string
     }
     $zip->close();
     return $zipPath;
+}
+
+function backup_storage_dir(): string
+{
+    $dir = data_path('backups');
+    if (!is_dir($dir)) mkdir($dir, 0775, true);
+    return $dir;
+}
+
+function backup_file_path(string $name): string
+{
+    $name = basename($name);
+    if (!preg_match('/^backup-[0-9]{8}-[0-9]{6}\.zip$/', $name)) return '';
+    $path = backup_storage_dir() . '/' . $name;
+    return is_file($path) ? $path : '';
+}
+
+function list_backup_zips(): array
+{
+    $files = [];
+    foreach (glob(backup_storage_dir() . '/backup-*.zip') ?: [] as $path) {
+        if (!is_file($path)) continue;
+        $files[] = [
+            'name' => basename($path),
+            'path' => $path,
+            'created' => filemtime($path) ?: 0,
+            'size' => filesize($path) ?: 0,
+        ];
+    }
+    usort($files, fn($a, $b) => ($b['created'] <=> $a['created']));
+    return $files;
+}
+
+function delete_backup_zip(string $name): bool
+{
+    $path = backup_file_path($name);
+    return $path !== '' && @unlink($path);
+}
+
+function format_bytes(int $bytes): string
+{
+    if ($bytes >= 1048576) return number_format($bytes / 1048576, 2, ',', '.') . ' MB';
+    if ($bytes >= 1024) return number_format($bytes / 1024, 1, ',', '.') . ' KB';
+    return $bytes . ' B';
 }
 
 function restore_backup_zip(string $tmp): bool
