@@ -551,3 +551,5 @@ Das System setzt automatisch:
 - Bezeichnung, z.B. `Instagram`
 - Key, z.B. `instagram`
 - vCard-Feld, z.B. `URL;TYPE=Instagram`
+
+- Vereinfachung: Die Plattform-Spalte wurde aus der Datentypen-Übersicht entfernt. Social-Plattformen werden nur noch beim Anlegen ausgewählt.
