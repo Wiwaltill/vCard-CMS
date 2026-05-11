@@ -624,6 +624,13 @@ function current_url(): string
     return $scheme . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
 }
 
+function current_url_without_query(): string
+{
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+    return $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . $path;
+}
+
 // ---- v8.6 Erweiterungen: i18n, Themes, API, CSV, Backup, QR/PWA ----
 function browser_lang(): string
 {
@@ -666,12 +673,14 @@ function t(string $key, ?array $config = null): string
         'de' => [
             'save_contact' => 'Kontakt speichern', 'show_qr' => 'QR-Code anzeigen', 'qr_code' => 'QR-Code',
             'download_png' => 'PNG herunterladen', 'download_svg' => 'SVG herunterladen', 'install_app' => 'Zum Homescreen hinzufügen',
+            'install_ios_title' => 'Zum Homescreen hinzufügen', 'install_ios_text' => 'Öffne das Teilen-Menü in Safari und wähle „Zum Home-Bildschirm“. Die aktuelle Kontaktkarte wird verknüpft.',
             'imprint' => 'Impressum', 'privacy' => 'Datenschutz', 'contact_not_found' => 'Kontakt nicht gefunden',
             'contact_not_found_text' => 'Der gesuchte Kontakt konnte nicht gefunden werden.', 'write_us' => 'Schreiben Sie uns'
         ],
         'en' => [
             'save_contact' => 'Save contact', 'show_qr' => 'Show QR code', 'qr_code' => 'QR code',
             'download_png' => 'Download PNG', 'download_svg' => 'Download SVG', 'install_app' => 'Add to home screen',
+            'install_ios_title' => 'Add to home screen', 'install_ios_text' => 'Open Safari’s Share menu and choose “Add to Home Screen”. The current contact card will be linked.',
             'imprint' => 'Legal notice', 'privacy' => 'Privacy', 'contact_not_found' => 'Contact not found',
             'contact_not_found_text' => 'The requested contact could not be found.', 'write_us' => 'Contact us'
         ]
