@@ -13,10 +13,10 @@ include '../includes/header.php';
 
 <div class="d-flex justify-content-between align-items-center mb-4">
 
-<h1>Kontakte</h1>
+<h1><?= h(admin_t('contacts', $config)) ?></h1>
 
 <a href="/admin/new" class="btn btn-primary">
-<i class="bi bi-plus-lg"></i> Neuer Kontakt
+<i class="bi bi-plus-lg"></i> <?= h(admin_t('new_contact', $config)) ?>
 </a>
 
 </div>
@@ -25,11 +25,11 @@ include '../includes/header.php';
 
 <thead>
 <tr>
-<th>Nachname</th>
-<th>Vorname</th>
-<th>E-Mail</th>
-<th>URL</th>
-<th width="160">Aktionen</th>
+<th><?= h(admin_t('last_name', $config)) ?></th>
+<th><?= h(admin_t('first_name', $config)) ?></th>
+<th><?= h(admin_t('email', $config)) ?></th>
+<th><?= h(admin_t('url', $config)) ?></th>
+<th width="160"><?= h(admin_t('actions', $config)) ?></th>
 </tr>
 </thead>
 
@@ -47,7 +47,7 @@ include '../includes/header.php';
 <?= h(contact_email($contact, $config)) ?>
 </a>
 <?php if (!empty($contact['email_override'])): ?>
-<span class="badge bg-secondary ms-1">manuell</span>
+<span class="badge bg-secondary ms-1"><?= h(admin_t('manual', $config)) ?></span>
 <?php endif; ?>
 </td>
 
@@ -82,21 +82,21 @@ data-bs-target="#deleteModal<?= h($contact['id']) ?>"
 <div class="modal-content">
 
 <div class="modal-header">
-<h5 class="modal-title">Kontakt löschen</h5>
+<h5 class="modal-title"><?= h(admin_t('delete_contact', $config)) ?></h5>
 </div>
 
 <div class="modal-body">
-Soll der Kontakt <strong><?= h($contact['vorname']) ?> <?= h($contact['nachname']) ?></strong> wirklich gelöscht werden?
+<?= h(admin_t('delete_contact_confirm', $config)) ?> <strong><?= h($contact['vorname']) ?> <?= h($contact['nachname']) ?></strong>
 </div>
 
 <div class="modal-footer">
 
 <button class="btn btn-secondary" data-bs-dismiss="modal">
-Abbrechen
+<?= h(admin_t('cancel', $config)) ?>
 </button>
 
 <a href="/admin/delete?id=<?= h($contact['id']) ?>" class="btn btn-danger">
-Löschen
+<?= h(admin_t('delete', $config)) ?>
 </a>
 
 </div>
