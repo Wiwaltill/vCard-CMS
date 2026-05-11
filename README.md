@@ -7,6 +7,7 @@ Das System benötigt **keine Datenbank**, kein Docker und kein Framework. Es lä
 ## Features
 
 - Digitale Kontaktseiten pro Mitarbeiter
+- Konfigurierbare Datentypen für Kontaktinformationen
 - URL nach Initialen oder eindeutigem Kürzel, zum Beispiel `/jd`
 - Automatischer vCard-Download pro Kontakt
 - Mitarbeiterfoto-Upload
@@ -17,6 +18,7 @@ Das System benötigt **keine Datenbank**, kein Docker und kein Framework. Es lä
 - Automatische E-Mail-Generierung nach Schema
 - Optionale manuelle E-Mail-Überschreibung pro Kontakt
 - Firmenlogo, Firmenfarbe, Links und Mail-Schema über Einstellungen pflegbar
+- Datentypen aktivieren, sortieren, hinzufügen und löschen
 - Impressum- und Datenschutzlinks auf der Kontaktseite
 - `noindex`, `nofollow` und `robots.txt`
 - Installationsassistent für die Ersteinrichtung
@@ -419,3 +421,90 @@ Beispiel:
 ```
 
 Wenn `new_setting` in der bestehenden Installation fehlt, wird es ergänzt. Wenn es bereits existiert, bleibt der bestehende Wert unverändert.
+
+
+## Datentypen
+
+Im Adminmenü gibt es den Bereich **Datentypen**.
+
+Dort kann festgelegt werden, welche Kontaktinformationen auf der öffentlichen Kontaktseite erscheinen.
+
+Möglich sind zum Beispiel:
+
+- E-Mail
+- Telefon
+- Festnetz
+- Fax
+- Website
+- LinkedIn
+- Freitext
+
+Jeder Datentyp hat:
+
+- Bezeichnung
+- Typ: Text, Telefon, E-Mail oder URL
+- Sortierung
+- Aktiv/Inaktiv
+- optionales vCard-Feld
+- Löschen, sofern es kein Systemfeld ist
+
+Die Reihenfolge auf der Kontaktseite richtet sich nach dem Sortierwert.
+
+### Systemfelder
+
+Die Standardfelder `Telefon` und `E-Mail` sind Systemfelder. Sie können ausgeblendet und umbenannt, aber nicht gelöscht werden.
+
+### Eigene Felder
+
+Neue Felder werden im Kontaktformular automatisch ergänzt. Werte werden im jeweiligen Kontakt unter `fields` gespeichert.
+
+Beispiel:
+
+```json
+{
+  "fields": {
+    "fax": "+49 123 456789",
+    "linkedin": "https://linkedin.com/in/example"
+  }
+}
+```
+
+
+### vCard-Felder
+
+Im Bereich Datentypen kann optional ein vCard-Feld gesetzt werden, zum Beispiel:
+
+```text
+TEL;TYPE=WORK
+EMAIL
+URL;TYPE=LinkedIn
+```
+
+Weitere Informationen zum vCard-Format gibt es hier:
+
+```text
+https://de.wikipedia.org/wiki/VCard
+```
+
+### Social Media
+
+Datentypen können als **Social Media** angelegt werden. Unterstützte Plattformen:
+
+- Facebook
+- Instagram
+- LinkedIn
+- TikTok
+- X
+- YouTube
+
+Im Kontaktformular reicht dann der Username. Das System erzeugt daraus automatisch die passende Profil-URL.
+
+Beispiele:
+
+```text
+Instagram: max.mustermann → https://www.instagram.com/max.mustermann
+LinkedIn: max-mustermann → https://www.linkedin.com/in/max-mustermann
+TikTok: maxmustermann → https://www.tiktok.com/@maxmustermann
+```
+
+Alternativ kann auch direkt eine vollständige URL eingetragen werden.
