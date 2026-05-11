@@ -19,4 +19,4 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           ssh_private_key: ${{ secrets.FTP_PASSWORD }}
           local_dir: ./local/
-          remote_dir: .
+          remote_dir: ./
