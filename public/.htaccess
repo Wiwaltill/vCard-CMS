@@ -1,5 +1,10 @@
 RewriteEngine On
 
+RewriteCond %{THE_REQUEST} \s/+admin/([^\s?]+)\.php[\s?] [NC]
+RewriteRule ^admin/(.+)\.php$ /admin/$1 [R=301,L]
+
 RewriteRule ^admin/?$ admin/index.php [L]
-RewriteRule ^([a-z0-9]{2,4})$ card.php?id=$1 [L,QSA]
-RewriteRule ^([a-z0-9]{2,4})/vcard$ vcard.php?id=$1 [L,QSA]
+RewriteRule ^admin/(login|logout|settings|new|edit|delete)$ admin/$1.php [L,QSA]
+
+RewriteRule ^([a-z0-9]{2,6})$ card.php?id=$1 [L,QSA]
+RewriteRule ^([a-z0-9]{2,6})/vcard$ vcard.php?id=$1 [L,QSA]
