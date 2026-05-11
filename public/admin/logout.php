@@ -8,5 +8,5 @@ setcookie('kb_admin_login', '', [
     'samesite' => 'Lax'
 ]);
 
-header('Location: login.php');
+header('Location: /admin/login');
 exit;
