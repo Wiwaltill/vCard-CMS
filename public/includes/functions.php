@@ -126,8 +126,9 @@ function get_config(): array
         'admin_user' => 'admin',
         'admin_password_hash' => password_hash('admin123', PASSWORD_DEFAULT),
         'installed' => false,
-        'language' => 'de',
+        'language' => 'auto',
         'theme' => 'classic',
+        'theme_mode' => 'auto',
         'darkmode_default' => false,
         'pwa_enabled' => true,
         'api_enabled' => true,
@@ -624,6 +625,18 @@ function current_url(): string
 }
 
 // ---- v8.6 Erweiterungen: i18n, Themes, API, CSV, Backup, QR/PWA ----
+function browser_lang(): string
+{
+    $header = strtolower($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '');
+    if (preg_match('/\bde\b|\bde[-_]/', $header)) {
+        return 'de';
+    }
+    if (preg_match('/\ben\b|\ben[-_]/', $header)) {
+        return 'en';
+    }
+    return 'de';
+}
+
 function app_lang(?array $config = null): string
 {
     $config = $config ?: get_config();
@@ -636,7 +649,14 @@ function app_lang(?array $config = null): string
         return $_GET['lang'];
     }
 
-    $lang = $config['language'] ?? ($_COOKIE['vcard_lang'] ?? 'de');
+    if (isset($_COOKIE['vcard_lang']) && in_array($_COOKIE['vcard_lang'], $allowed, true)) {
+        return $_COOKIE['vcard_lang'];
+    }
+
+    $lang = $config['language'] ?? 'auto';
+    if ($lang === 'auto') {
+        return browser_lang();
+    }
     return in_array($lang, $allowed, true) ? $lang : 'de';
 }
 
@@ -668,10 +688,40 @@ function theme_name(?array $config = null): string
     return in_array($theme, $allowed, true) ? $theme : 'classic';
 }
 
-function darkmode_default(?array $config = null): bool
+function theme_mode(?array $config = null): string
 {
     $config = $config ?: get_config();
-    return !empty($config['darkmode_default']);
+    $mode = $config['theme_mode'] ?? (!empty($config['darkmode_default']) ? 'dark' : 'auto');
+    return in_array($mode, ['auto', 'light', 'dark'], true) ? $mode : 'auto';
+}
+
+function initial_bs_theme(?array $config = null): string
+{
+    $mode = theme_mode($config);
+    return $mode === 'dark' ? 'dark' : 'light';
+}
+
+function darkmode_default(?array $config = null): bool
+{
+    return theme_mode($config) === 'dark';
+}
+
+function admin_t(string $key, ?array $config = null): string
+{
+    static $dict = [
+        'de' => [
+            'contacts'=>'Kontakte','data_types'=>'Datentypen','settings'=>'Einstellungen','logout'=>'Logout','backup'=>'Backup','csv'=>'CSV','api'=>'API',
+            'appearance_language'=>'Darstellung & Sprache','language'=>'Sprache','language_auto'=>'Automatisch nach Browser','german'=>'Deutsch','english'=>'English','theme'=>'Theme','color_mode'=>'Farbmodus','auto'=>'Auto','light'=>'Hell','dark'=>'Dunkel','pwa_enable'=>'PWA aktivieren','save'=>'Speichern',
+            'company_data'=>'Firmendaten','links'=>'Links','email_auto'=>'E-Mail Automatik','user_admin'=>'Nutzerverwaltung','saved'=>'Einstellungen gespeichert.'
+        ],
+        'en' => [
+            'contacts'=>'Contacts','data_types'=>'Data types','settings'=>'Settings','logout'=>'Logout','backup'=>'Backup','csv'=>'CSV','api'=>'API',
+            'appearance_language'=>'Appearance & language','language'=>'Language','language_auto'=>'Automatic based on browser','german'=>'German','english'=>'English','theme'=>'Theme','color_mode'=>'Color mode','auto'=>'Auto','light'=>'Light','dark'=>'Dark','pwa_enable'=>'Enable PWA','save'=>'Save',
+            'company_data'=>'Company data','links'=>'Links','email_auto'=>'Email automation','user_admin'=>'User administration','saved'=>'Settings saved.'
+        ],
+    ];
+    $lang = app_lang($config);
+    return $dict[$lang][$key] ?? $dict['de'][$key] ?? $key;
 }
 
 function public_base_url(): string
