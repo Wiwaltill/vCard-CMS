@@ -540,3 +540,14 @@ Social-Media-Datentypen werden nicht automatisch angelegt. Sie können bei Bedar
 Gelöschte Datentypen bleiben gelöscht. Die Update-Migration ergänzt neue allgemeine Config-Keys, überschreibt aber nicht die individuell gepflegte `data_types`-Liste.
 
 - Fix: Social-Media-Plattformen können wieder über „Datentypen“ hinzugefügt werden, ohne standardmäßig angelegt zu sein.
+
+
+### Social Media Datentypen anlegen
+
+Bei Social Media muss keine separate Bezeichnung mehr eingegeben werden. Es reicht, den Typ **Social Media** zu wählen und danach die Plattform auszuwählen.
+
+Das System setzt automatisch:
+
+- Bezeichnung, z.B. `Instagram`
+- Key, z.B. `instagram`
+- vCard-Feld, z.B. `URL;TYPE=Instagram`
