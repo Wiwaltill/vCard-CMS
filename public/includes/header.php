@@ -3,7 +3,7 @@ require_once __DIR__ . '/functions.php';
 $config = get_config();
 ?>
 <!DOCTYPE html>
-<html lang="<?= h(app_lang($config)) ?>" data-bs-theme="<?= darkmode_default($config) ? 'dark' : 'light' ?>">
+<html lang="<?= h(app_lang($config)) ?>" data-bs-theme="<?= h(initial_bs_theme($config)) ?>" data-bs-theme-mode="<?= h(theme_mode($config)) ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow,noarchive">
@@ -94,14 +94,14 @@ pre {
 
 <li class="nav-item">
 <a class="nav-link" href="/admin">
-<i class="bi bi-people"></i> Kontakte
+<i class="bi bi-people"></i> <?= h(admin_t('contacts', $config)) ?>
 </a>
 </li>
 
 
 <li class="nav-item">
 <a class="nav-link" href="/admin/datatypes">
-<i class="bi bi-list-check"></i> Datentypen
+<i class="bi bi-list-check"></i> <?= h(admin_t('data_types', $config)) ?>
 </a>
 </li>
 
@@ -125,19 +125,26 @@ pre {
 </li>
 
 <li class="nav-item">
-<button class="btn btn-sm btn-outline-light ms-lg-2" type="button" id="darkToggle"><i class="bi bi-moon-stars"></i></button>
-</li>
-
-<li class="nav-item">
 <a class="nav-link" href="/admin/settings">
-<i class="bi bi-gear"></i> Einstellungen
+<i class="bi bi-gear"></i> <?= h(admin_t('settings', $config)) ?>
 </a>
 </li>
 
 <li class="nav-item">
 <a class="nav-link" href="/admin/logout">
-<i class="bi bi-box-arrow-right"></i> Logout
+<i class="bi bi-box-arrow-right"></i> <?= h(admin_t('logout', $config)) ?>
 </a>
+</li>
+
+<li class="nav-item dropdown ms-lg-2">
+<button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="themeModeToggle">
+<i class="bi bi-circle-half me-1"></i><span data-theme-mode-label>Auto</span>
+</button>
+<ul class="dropdown-menu dropdown-menu-end">
+<li><button class="dropdown-item" type="button" data-theme-value="auto"><i class="bi bi-circle-half me-2"></i>Auto</button></li>
+<li><button class="dropdown-item" type="button" data-theme-value="light"><i class="bi bi-sun me-2"></i>Light</button></li>
+<li><button class="dropdown-item" type="button" data-theme-value="dark"><i class="bi bi-moon-stars me-2"></i>Dark</button></li>
+</ul>
 </li>
 
 </ul>
