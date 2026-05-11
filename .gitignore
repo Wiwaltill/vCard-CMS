@@ -1,1 +1,13 @@
+# OS / editor
 .DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local runtime files
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# Keep data samples in repo, but ignore local backups
+/data/*.bak
+/data/backups/
