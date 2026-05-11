@@ -73,21 +73,30 @@ include '../includes/header.php';
 
 <form method="post" enctype="multipart/form-data">
 
-<div class="mb-3">
+<div class="row">
+<div class="col-md-6 mb-3">
 <label class="form-label">Vorname</label>
 <input type="text" name="vorname" value="<?= h($current['vorname']) ?>" class="form-control" required>
 </div>
 
-<div class="mb-3">
+<div class="col-md-6 mb-3">
 <label class="form-label">Nachname</label>
 <input type="text" name="nachname" value="<?= h($current['nachname']) ?>" class="form-control" required>
 </div>
+</div>
 
-<div class="mb-3">
+<div class="row">
+<div class="col-md-6 mb-3">
+<label class="form-label">Position</label>
+<input type="text" name="position" value="<?= h($current['position']) ?>" class="form-control">
+</div>
+
+<div class="col-md-6 mb-3">
 <label class="form-label">E-Mail</label>
 <input type="email" name="email" id="email" value="<?= h($currentEmail) ?>" class="form-control" <?= $emailOverride ? '' : 'disabled' ?>>
 <div class="form-text">
-Automatische E-Mail nach aktuellem Schema: <?= h($autoEmail) ?>
+Automatisch: <?= h($autoEmail) ?>
+</div>
 </div>
 </div>
 
@@ -98,17 +107,13 @@ Automatische E-Mail überschreiben
 </label>
 </div>
 
-<div class="mb-3">
-<label class="form-label">Position</label>
-<input type="text" name="position" value="<?= h($current['position']) ?>" class="form-control">
-</div>
-
-<div class="mb-3">
+<div class="row">
+<div class="col-md-6 mb-3">
 <label class="form-label">Telefon</label>
 <input type="text" name="telefon" value="<?= h($current['telefon']) ?>" class="form-control">
 </div>
 
-<div class="mb-3">
+<div class="col-md-6 mb-3">
 <label class="form-label">Mitarbeiterfoto</label>
 
 <?php if (!empty($current['bild'])): ?>
@@ -121,7 +126,8 @@ Automatische E-Mail überschreiben
 <?php endif; ?>
 
 <input type="file" name="bild" class="form-control" accept=".png,.jpg,.jpeg,.webp">
-<div class="form-text">Wenn ein neues Bild hochgeladen wird, wird die alte Datei automatisch vom Server gelöscht.</div>
+<div class="form-text">Neues Bild ersetzt die alte Datei automatisch.</div>
+</div>
 </div>
 
 <button class="btn btn-success">Speichern</button>
