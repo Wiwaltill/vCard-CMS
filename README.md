@@ -365,3 +365,5 @@ RewriteRule ^ - [L]
 ```
 
 Diese Version enthält diese Regel bereits.
+
+- Firmenlogo auf der 404-Kontaktseite verweist jetzt auf den konfigurierten Logo-Link

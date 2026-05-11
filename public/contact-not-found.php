@@ -57,7 +57,9 @@ body {
 <div class="card-body text-center p-5">
 
 <?php if (!empty($config['company_logo'])): ?>
+<a href="<?= h($config['logo_link']) ?>" target="_blank" rel="noopener">
 <img src="<?= h($config['company_logo']) ?>" alt="<?= h($config['company_name']) ?>" style="max-height: 70px; max-width: 220px;" class="mb-4">
+</a>
 <?php endif; ?>
 
 <h1 class="h3 mb-3">Kontakt nicht gefunden</h1>
