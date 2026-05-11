@@ -16,8 +16,6 @@ foreach ($contacts as $contact) {
         $nachname = vcard_escape($contact['nachname'] ?? '');
         $name = trim(($contact['vorname'] ?? '') . ' ' . ($contact['nachname'] ?? ''));
         $nameEscaped = vcard_escape($name);
-        $telefon = vcard_escape($contact['telefon'] ?? '');
-        $email = vcard_escape(contact_email($contact, $config));
         $position = vcard_escape($contact['position'] ?? '');
         $company = vcard_escape($config['company_name'] ?? '');
         $url = vcard_escape($config['logo_link'] ?? '');
@@ -27,12 +25,28 @@ foreach ($contacts as $contact) {
         $vcard .= "FN;CHARSET=UTF-8:{$nameEscaped}\r\n";
         $vcard .= "N;CHARSET=UTF-8:{$nachname};{$vorname};;;\r\n";
 
-        if ($telefon !== '') {
-            $vcard .= "TEL;TYPE=CELL:{$telefon}\r\n";
-        }
+        foreach (data_types($config, true) as $type) {
+            $value = data_type_value($contact, $type, $config);
 
-        if ($email !== '') {
-            $vcard .= "EMAIL:{$email}\r\n";
+            if ($value === '') {
+                continue;
+            }
+
+            $field = trim($type['vcard'] ?? '');
+
+            if ($field === '') {
+                if (($type['type'] ?? '') === 'email') {
+                    $field = 'EMAIL';
+                } elseif (($type['type'] ?? '') === 'tel') {
+                    $field = 'TEL';
+                } elseif (($type['type'] ?? '') === 'url') {
+                    $field = 'URL;CHARSET=UTF-8';
+                }
+            }
+
+            if ($field !== '') {
+                $vcard .= $field . ":" . vcard_escape($value) . "\r\n";
+            }
         }
 
         if ($position !== '') {
