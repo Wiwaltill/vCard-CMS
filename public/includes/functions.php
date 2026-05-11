@@ -44,7 +44,8 @@ function get_config(): array
         'email_domain' => 'kb-events.eu',
         'email_pattern' => 'vorname.nachname',
         'admin_user' => 'admin',
-        'admin_password_hash' => password_hash('admin123', PASSWORD_DEFAULT)
+        'admin_password_hash' => password_hash('admin123', PASSWORD_DEFAULT),
+        'installed' => false
     ], $config);
 }
 
@@ -218,6 +219,22 @@ function delete_public_file(?string $publicPath): bool
 
     return false;
 }
+
+
+function is_installed(): bool
+{
+    $config = get_config();
+    return !empty($config['installed']);
+}
+
+function require_installed(): void
+{
+    if (!is_installed() && basename($_SERVER['SCRIPT_NAME']) !== 'install.php') {
+        header('Location: /install');
+        exit;
+    }
+}
+
 
 function is_logged_in(): bool
 {
