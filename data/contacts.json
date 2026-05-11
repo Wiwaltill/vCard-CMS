@@ -1,11 +1,12 @@
 [
   {
-    "id": "am",
-    "vorname": "Alex",
-    "nachname": "Mustermann",
-    "telefon": "+49123456789",
-    "email": "alex@kb-events.eu",
-    "position": "Eventmanagement",
+    "id": "jd",
+    "vorname": "Jane",
+    "nachname": "Doe",
+    "telefon": "+491234567890",
+    "email": "jane.doe@example.com",
+    "email_override": false,
+    "position": "Event Manager",
     "bild": ""
   }
 ]
