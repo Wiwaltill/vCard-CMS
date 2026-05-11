@@ -5,6 +5,7 @@ require_installed();
 require_login();
 
 $config = get_config();
+$types = data_types($config);
 $contacts = load_json('contacts.json', []);
 $id = $_GET['id'] ?? '';
 $current = null;
@@ -51,10 +52,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $contacts[$currentKey]['id'] = $newId;
     $contacts[$currentKey]['vorname'] = $vorname;
     $contacts[$currentKey]['nachname'] = $nachname;
-    $contacts[$currentKey]['telefon'] = $_POST['telefon'];
     $contacts[$currentKey]['email'] = $email;
     $contacts[$currentKey]['email_override'] = $emailOverride;
     $contacts[$currentKey]['position'] = $_POST['position'];
+
+    if (!isset($contacts[$currentKey]['fields']) || !is_array($contacts[$currentKey]['fields'])) {
+        $contacts[$currentKey]['fields'] = [];
+    }
+
+    foreach ($types as $type) {
+        $key = $type['key'];
+
+        if ($key === 'email') {
+            continue;
+        }
+
+        $value = trim($_POST[data_type_input_name($key)] ?? '');
+        set_data_type_value($contacts[$currentKey], $type, $value);
+    }
 
     save_contacts($contacts);
 
@@ -92,10 +107,15 @@ include '../includes/header.php';
 <input type="text" name="position" value="<?= h($current['position']) ?>" class="form-control">
 </div>
 
+<?php foreach ($types as $type): ?>
+<?php if ($type['key'] !== 'phone'): ?>
+<?php continue; ?>
+<?php endif; ?>
 <div class="col-md-6 mb-3">
-<label class="form-label">Telefon</label>
-<input type="text" name="telefon" value="<?= h($current['telefon']) ?>" class="form-control">
+<label class="form-label"><?= h($type['label']) ?></label>
+<input type="<?= h($type['type']) ?>" name="<?= h(data_type_input_name($type['key'])) ?>" value="<?= h(data_type_value($current, $type, $config)) ?>" class="form-control">
 </div>
+<?php endforeach; ?>
 </div>
 
 <div class="mb-3">
@@ -113,9 +133,17 @@ Automatische E-Mail überschreiben
 </label>
 </div>
 
-<div class="row">
+<?php foreach ($types as $type): ?>
+<?php if (in_array($type['key'], ['email', 'phone'], true)): ?>
+<?php continue; ?>
+<?php endif; ?>
+<div class="mb-3">
+<label class="form-label"><?= h($type['label']) ?></label>
+<input type="<?= h($type['type']) ?>" name="<?= h(data_type_input_name($type['key'])) ?>" value="<?= h(data_type_value($current, $type, $config)) ?>" class="form-control">
+</div>
+<?php endforeach; ?>
 
-<div class="col-md-6 mb-3">
+<div class="mb-3">
 <label class="form-label">Mitarbeiterfoto</label>
 
 <?php if (!empty($current['bild'])): ?>
@@ -129,7 +157,6 @@ Automatische E-Mail überschreiben
 
 <input type="file" name="bild" class="form-control" accept=".png,.jpg,.jpeg,.webp">
 <div class="form-text">Neues Bild ersetzt die alte Datei automatisch.</div>
-</div>
 </div>
 
 <button class="btn btn-success">Speichern</button>
