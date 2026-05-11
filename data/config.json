@@ -1,13 +1,14 @@
 {
-  "company_name": "KB-Events",
+  "company_name": "Demo Company",
   "company_color": "#0d6efd",
-  "company_logo": "/uploads/logo.png",
-  "github_url": "https://github.com/kb-events",
+  "company_logo": "",
+  "github_url": "",
+  "logo_link": "https://example.com",
+  "privacy_url": "https://example.com/privacy",
+  "imprint_url": "https://example.com/imprint",
+  "email_domain": "example.com",
+  "email_pattern": "vorname.nachname",
   "admin_user": "admin",
   "admin_password_hash": "$2y$10$ztC016/wWAvHL87IQ2pwPezQb8UixMTXNjMnMT0e4IGnW3LkW4Gga",
-  "logo_link": "https://kb-events.eu",
-  "email_domain": "kb-events.eu",
-  "email_pattern": "vorname.nachname",
-  "privacy_url": "https://kb-events.eu/datenschutz",
-  "imprint_url": "https://kb-events.eu/impressum"
+  "installed": false
 }
