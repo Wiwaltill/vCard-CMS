@@ -508,3 +508,10 @@ TikTok: maxmustermann → https://www.tiktok.com/@maxmustermann
 ```
 
 Alternativ kann auch direkt eine vollständige URL eingetragen werden.
+
+
+### URL- und Social-Link-Ausgabe
+
+URL- und Social-Media-Datentypen öffnen auf der Kontaktseite automatisch in einem neuen Tab.
+
+Für Social-Media-Datentypen kann im Kontaktformular entweder ein Username oder eine vollständige URL eingetragen werden. In der Kontaktseite und in der vCard wird daraus immer eine vollständige URL erzeugt.
