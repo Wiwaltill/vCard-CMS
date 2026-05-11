@@ -19,5 +19,5 @@ $contacts = array_filter($contacts, function ($contact) use ($id) {
 
 save_contacts($contacts);
 
-header('Location:index.php');
+header('Location: /admin');
 exit;
