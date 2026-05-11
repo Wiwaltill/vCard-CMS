@@ -39,6 +39,8 @@ function get_config(): array
         'company_logo' => '/uploads/logo.png',
         'github_url' => 'https://github.com/kb-events',
         'logo_link' => 'https://kb-events.eu',
+        'privacy_url' => 'https://kb-events.eu/datenschutz',
+        'imprint_url' => 'https://kb-events.eu/impressum',
         'email_domain' => 'kb-events.eu',
         'email_pattern' => 'vorname.nachname',
         'admin_user' => 'admin',
