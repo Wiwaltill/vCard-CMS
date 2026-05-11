@@ -5,12 +5,10 @@ function data_path(string $file): string
     return __DIR__ . '/../../data/' . $file;
 }
 
-function load_json(string $file, array $fallback = []): array
+function load_json_file_path(string $path, array $fallback = []): array
 {
-    $path = data_path($file);
-
     if (!file_exists($path)) {
-        file_put_contents($path, json_encode($fallback, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        return $fallback;
     }
 
     $json = file_get_contents($path);
@@ -19,34 +17,113 @@ function load_json(string $file, array $fallback = []): array
     return is_array($data) ? $data : $fallback;
 }
 
-function save_json(string $file, array $data): void
+function save_json_file_path(string $path, array $data): void
 {
-    $path = data_path($file);
-
     file_put_contents(
         $path,
         json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
     );
 }
 
+function sample_file_for(string $file): string
+{
+    if ($file === 'config.json') {
+        return 'config.sample.json';
+    }
+
+    if ($file === 'contacts.json') {
+        return 'contacts.sample.json';
+    }
+
+    return $file;
+}
+
+function load_json(string $file, array $fallback = []): array
+{
+    $path = data_path($file);
+
+    if (!file_exists($path)) {
+        $samplePath = data_path(sample_file_for($file));
+
+        if (file_exists($samplePath)) {
+            $sample = load_json_file_path($samplePath, $fallback);
+            save_json_file_path($path, $sample);
+            return $sample;
+        }
+
+        save_json_file_path($path, $fallback);
+        return $fallback;
+    }
+
+    return load_json_file_path($path, $fallback);
+}
+
+function save_json(string $file, array $data): void
+{
+    save_json_file_path(data_path($file), $data);
+}
+
+function merge_missing_keys(array $current, array $sample): array
+{
+    foreach ($sample as $key => $value) {
+        if (!array_key_exists($key, $current)) {
+            $current[$key] = $value;
+            continue;
+        }
+
+        if (is_array($value) && is_array($current[$key])) {
+            $current[$key] = merge_missing_keys($current[$key], $value);
+        }
+    }
+
+    return $current;
+}
+
+function migrate_config_from_sample(): void
+{
+    $configPath = data_path('config.json');
+    $samplePath = data_path('config.sample.json');
+
+    if (!file_exists($configPath) || !file_exists($samplePath)) {
+        return;
+    }
+
+    $current = load_json_file_path($configPath, []);
+    $sample = load_json_file_path($samplePath, []);
+
+    $merged = merge_missing_keys($current, $sample);
+
+    if ($merged !== $current) {
+        save_json_file_path($configPath, $merged);
+    }
+}
+
 function get_config(): array
 {
-    $config = load_json('config.json', []);
+    migrate_config_from_sample();
 
-    return array_merge([
-        'company_name' => 'KB-Events',
+    $sample = load_json_file_path(data_path('config.sample.json'), []);
+
+    $defaults = array_merge([
+        'company_name' => 'Demo Company',
         'company_color' => '#0d6efd',
-        'company_logo' => '/uploads/logo.png',
-        'github_url' => 'https://github.com/kb-events',
-        'logo_link' => 'https://kb-events.eu',
-        'privacy_url' => 'https://kb-events.eu/datenschutz',
-        'imprint_url' => 'https://kb-events.eu/impressum',
-        'email_domain' => 'kb-events.eu',
+        'company_logo' => '',
+        'github_url' => '',
+        'logo_link' => 'https://example.com',
+        'privacy_url' => 'https://example.com/privacy',
+        'imprint_url' => 'https://example.com/imprint',
+        'home_redirect_url' => 'https://example.com',
+        'contact_email' => 'info@example.com',
+        'email_domain' => 'example.com',
         'email_pattern' => 'vorname.nachname',
         'admin_user' => 'admin',
         'admin_password_hash' => password_hash('admin123', PASSWORD_DEFAULT),
         'installed' => false
-    ], $config);
+    ], $sample);
+
+    $config = load_json('config.json', $defaults);
+
+    return array_merge($defaults, $config);
 }
 
 function load_contacts(): array
@@ -110,7 +187,7 @@ function generate_email(string $vorname, string $nachname, array $config): strin
 {
     $first = normalize_email_part($vorname);
     $last = normalize_email_part($nachname);
-    $domain = strtolower(trim($config['email_domain'] ?? 'kb-events.eu'));
+    $domain = strtolower(trim($config['email_domain'] ?? 'example.com'));
     $domain = preg_replace('/^@/', '', $domain);
 
     switch ($config['email_pattern'] ?? 'vorname.nachname') {
@@ -123,7 +200,6 @@ function generate_email(string $vorname, string $nachname, array $config): strin
         case 'initialen':
             $local = substr($first, 0, 1) . substr($last, 0, 1);
             break;
-
         case 'v.nachname':
             $local = substr($first, 0, 1) . '.' . $last;
             break;
@@ -139,7 +215,7 @@ function generate_email(string $vorname, string $nachname, array $config): strin
             break;
     }
 
-    return $local . '@' . $domain;
+    return trim($local, '.') . '@' . $domain;
 }
 
 function email_pattern_label(string $pattern): string
@@ -147,8 +223,8 @@ function email_pattern_label(string $pattern): string
     $labels = [
         'vorname' => 'vorname@domain.de',
         'nachname' => 'nachname@domain.de',
-        'vorname.nachname' => 'vorname.nachname@domain.de',
         'initialen' => 'am@domain.de',
+        'vorname.nachname' => 'vorname.nachname@domain.de',
         'v.nachname' => 'v.nachname@domain.de',
         'vorname_nachname' => 'vorname_nachname@domain.de',
         'vornamenachname' => 'vornamenachname@domain.de'
@@ -156,7 +232,6 @@ function email_pattern_label(string $pattern): string
 
     return $labels[$pattern] ?? $labels['vorname.nachname'];
 }
-
 
 function contact_email(array $contact, array $config): string
 {
@@ -166,7 +241,6 @@ function contact_email(array $contact, array $config): string
 
     return generate_email($contact['vorname'] ?? '', $contact['nachname'] ?? '', $config);
 }
-
 
 function upload_image(string $field, string $prefix): string
 {
@@ -220,8 +294,6 @@ function delete_public_file(?string $publicPath): bool
     return false;
 }
 
-
-
 function base_domain_from_host(?string $host = null): string
 {
     $host = $host ?: ($_SERVER['HTTP_HOST'] ?? 'example.com');
@@ -241,7 +313,6 @@ function default_url_for_base_domain(string $baseDomain, string $path = ''): str
     return 'https://' . $baseDomain . ($path === '/' ? '' : $path);
 }
 
-
 function is_installed(): bool
 {
     $config = get_config();
@@ -255,7 +326,6 @@ function require_installed(): void
         exit;
     }
 }
-
 
 function is_logged_in(): bool
 {
@@ -275,7 +345,6 @@ function h(?string $value): string
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
 }
 
-
 function vcard_escape(?string $value): string
 {
     $value = $value ?? '';
@@ -284,7 +353,6 @@ function vcard_escape(?string $value): string
 
     return $value;
 }
-
 
 function current_url(): string
 {
