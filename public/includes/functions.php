@@ -156,6 +156,17 @@ function email_pattern_label(string $pattern): string
     return $labels[$pattern] ?? $labels['vorname.nachname'];
 }
 
+
+function contact_email(array $contact, array $config): string
+{
+    if (!empty($contact['email_override']) && !empty($contact['email'])) {
+        return $contact['email'];
+    }
+
+    return generate_email($contact['vorname'] ?? '', $contact['nachname'] ?? '', $config);
+}
+
+
 function upload_image(string $field, string $prefix): string
 {
     if (empty($_FILES[$field]['name']) || !is_uploaded_file($_FILES[$field]['tmp_name'])) {
