@@ -1,5 +1,5 @@
 <?php header('Content-Type: application/javascript; charset=utf-8'); ?>
-const CACHE='vcard-pwa-v3';
+const CACHE='vcard-pwa-v4';
 const CORE=['/manifest.webmanifest','/assets/icons/icon.svg'];
 self.addEventListener('install', event => {
   self.skipWaiting();
