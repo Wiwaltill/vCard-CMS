@@ -32,5 +32,11 @@
       "sort": 20,
       "vcard": "EMAIL"
     }
-  ]
+  ],
+  "language": "de",
+  "theme": "classic",
+  "darkmode_default": false,
+  "pwa_enabled": true,
+  "api_enabled": true,
+  "api_token": "change-me-after-install"
 }
