@@ -138,12 +138,12 @@ pre {
 
 <li class="nav-item dropdown ms-lg-2">
 <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="themeModeToggle">
-<i class="bi bi-circle-half me-1"></i><span data-theme-mode-label>Auto</span>
+<i class="bi bi-circle-half me-1"></i><span data-theme-mode-label><?= h(admin_t('auto', $config)) ?></span>
 </button>
 <ul class="dropdown-menu dropdown-menu-end">
-<li><button class="dropdown-item" type="button" data-theme-value="auto"><i class="bi bi-circle-half me-2"></i>Auto</button></li>
-<li><button class="dropdown-item" type="button" data-theme-value="light"><i class="bi bi-sun me-2"></i>Light</button></li>
-<li><button class="dropdown-item" type="button" data-theme-value="dark"><i class="bi bi-moon-stars me-2"></i>Dark</button></li>
+<li><button class="dropdown-item" type="button" data-theme-value="auto"><i class="bi bi-circle-half me-2"></i><?= h(admin_t('auto', $config)) ?></button></li>
+<li><button class="dropdown-item" type="button" data-theme-value="light"><i class="bi bi-sun me-2"></i><?= h(admin_t('light', $config)) ?></button></li>
+<li><button class="dropdown-item" type="button" data-theme-value="dark"><i class="bi bi-moon-stars me-2"></i><?= h(admin_t('dark', $config)) ?></button></li>
 </ul>
 </li>
 
