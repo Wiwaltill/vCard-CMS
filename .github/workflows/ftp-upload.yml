@@ -13,7 +13,7 @@ jobs:
       with:
         server: www181.your-server.de
         username: kbgeve_0
-        password: 7Ymc64QJjb4FYBy_
+        password: ${{ secrets.FTP_PASSWORD }}
         protocol: ftps
         port: 21
         exclude: |
