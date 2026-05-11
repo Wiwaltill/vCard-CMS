@@ -531,3 +531,10 @@ Das System erzeugt daraus automatisch:
 ```text
 https://www.xing.com/profile/max_mustermann
 ```
+
+
+### Hinweis zu Social-Media-Datentypen
+
+Social-Media-Datentypen werden nicht automatisch angelegt. Sie können bei Bedarf im Adminbereich unter **Datentypen** hinzugefügt werden.
+
+Gelöschte Datentypen bleiben gelöscht. Die Update-Migration ergänzt neue allgemeine Config-Keys, überschreibt aber nicht die individuell gepflegte `data_types`-Liste.
