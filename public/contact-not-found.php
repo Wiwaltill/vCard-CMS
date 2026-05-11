@@ -11,12 +11,12 @@ $mailto = $contactEmail !== '' ? 'mailto:' . $contactEmail : '';
 
 ?>
 <!DOCTYPE html>
-<html lang="de">
+<html lang="<?= h(app_lang($config)) ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kontakt nicht gefunden | <?= h($config['company_name']) ?></title>
+<title><?= h(t('contact_not_found', $config)) ?> | <?= h($config['company_name']) ?></title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
 
@@ -62,15 +62,15 @@ body {
 </a>
 <?php endif; ?>
 
-<h1 class="h3 mb-3">Kontakt nicht gefunden</h1>
+<h1 class="h3 mb-3"><?= h(t('contact_not_found', $config)) ?></h1>
 
-<p class="text-muted mb-4">
-Der gesuchte Kontakt konnte nicht gefunden werden.
+<p class="text-body-secondary mb-4">
+<?= h(t('contact_not_found_text', $config)) ?>
 </p>
 
 <?php if ($mailto): ?>
 <a href="<?= h($mailto) ?>" class="btn btn-company">
-Schreiben Sie uns
+<?= h(t('write_us', $config)) ?>
 </a>
 <?php endif; ?>
 
