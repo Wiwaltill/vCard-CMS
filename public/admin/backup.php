@@ -12,13 +12,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'create') {
         $zip = make_backup_zip();
         if ($zip) {
-            setcookie('backup_created', '1', [
-                'expires' => time() + 120,
-                'path' => dirname($_SERVER['SCRIPT_NAME']) ?: '/',
-                'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
-                'httponly' => false,
-                'samesite' => 'Lax',
-            ]);
             header('Content-Type: application/zip');
             header('Content-Disposition: attachment; filename="' . basename($zip) . '"');
             header('Content-Length: ' . filesize($zip));
@@ -52,9 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'delete_stored') {
         $message = delete_backup_zip((string)($_POST['file'] ?? '')) ? admin_t('backup_deleted', $config) : admin_t('backup_delete_failed', $config);
     }
-}
-
-if (isset($_GET['created']) && $_GET['created'] === '1') {
+} elseif (isset($_GET['backup_created'])) {
     $message = admin_t('backup_created', $config);
 }
 
@@ -68,7 +59,7 @@ include '../includes/header.php';
         <div class="card shadow-sm">
             <div class="card-header"><?= h(admin_t('create_backup', $config)) ?></div>
             <div class="card-body">
-                <form method="post" target="backupDownloadFrame" data-backup-create-form="1"><input type="hidden" name="action" value="create">
+                <form method="post" target="backupDownloadFrame" data-reload-after-download="1"><input type="hidden" name="action" value="create">
                     <p><?= h(admin_t('backup_export_help', $config)) ?></p><button class="btn btn-primary"><i class="bi bi-archive"></i> <?= h(admin_t('download_backup', $config)) ?></button>
                 </form>
             </div>
@@ -136,16 +127,20 @@ include '../includes/header.php';
 <iframe name="backupDownloadFrame" class="d-none" id="backupDownloadFrame"></iframe>
 <script>
 (function () {
-    const createForm = document.querySelector('form[data-backup-create-form="1"]');
-    if (!createForm) return;
+    const frame = document.getElementById('backupDownloadFrame');
+    if (!frame) return;
 
-    createForm.addEventListener('submit', () => {
-        const interval = window.setInterval(() => {
-            if (!document.cookie.split('; ').includes('backup_created=1')) return;
-            window.clearInterval(interval);
-            document.cookie = 'backup_created=; Max-Age=0; path=' + window.location.pathname.replace(/\/[^/]*$/, '');
-            window.location.href = window.location.pathname + '?created=1';
-        }, 300);
+    let shouldReload = false;
+    document.querySelectorAll('form[data-reload-after-download="1"]').forEach((form) => {
+        form.addEventListener('submit', () => {
+            shouldReload = true;
+        });
+    });
+
+    frame.addEventListener('load', () => {
+        if (!shouldReload) return;
+        shouldReload = false;
+        window.location.href = window.location.pathname + '?backup_created=1';
     });
 })();
 </script>
