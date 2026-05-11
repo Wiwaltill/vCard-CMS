@@ -277,6 +277,8 @@ Ein einfaches Backup besteht aus:
 /public/uploads
 ```
 
+Die Dateien `config.json` und `contacts.json` sind Laufzeitdaten und werden bewusst nicht versioniert.
+
 ## Updates
 
 Bei Updates sollten normalerweise folgende Dateien erhalten bleiben:
@@ -289,12 +291,25 @@ Bei Updates sollten normalerweise folgende Dateien erhalten bleiben:
 
 Neue Programmdateien können ersetzt werden. Vorher immer ein Backup erstellen.
 
+Das Repository enthält nur:
+
+```text
+/data/config.sample.json
+/data/contacts.sample.json
+```
+
+Diese Sample-Dateien dienen als Vorlage für Neuinstallationen und Updates.
+
+Wenn bei einem späteren Release neue Einstellungen in `config.sample.json` ergänzt werden, erkennt das System fehlende Keys automatisch und übernimmt sie in die bestehende `config.json`, ohne vorhandene Werte zu überschreiben.
+
 ## Projektstruktur
 
 ```text
 /data
-  config.json
-  contacts.json
+  config.sample.json
+  contacts.sample.json
+  config.json       # wird bei Installation erzeugt und ist nicht im Git-Repo
+  contacts.json     # wird bei Installation erzeugt und ist nicht im Git-Repo
 
 /public
   .htaccess
@@ -367,3 +382,40 @@ RewriteRule ^ - [L]
 Diese Version enthält diese Regel bereits.
 
 - Firmenlogo auf der 404-Kontaktseite verweist jetzt auf den konfigurierten Logo-Link
+
+
+## Sample-Dateien und Updates
+
+Für GitHub-Releases werden keine echten Installationsdaten ausgeliefert.
+
+Enthalten sind nur:
+
+```text
+/data/config.sample.json
+/data/contacts.sample.json
+```
+
+Bei der ersten Installation werden daraus automatisch erzeugt:
+
+```text
+/data/config.json
+/data/contacts.json
+```
+
+Diese echten Dateien sind in `.gitignore` ausgeschlossen, damit Updates keine bestehenden Daten überschreiben.
+
+### Automatische Config-Migration
+
+Wenn in einem Update neue Felder in `config.sample.json` hinzukommen, werden diese beim nächsten Aufruf automatisch in die bestehende `config.json` übernommen.
+
+Vorhandene Werte bleiben erhalten.
+
+Beispiel:
+
+```json
+{
+  "new_setting": "default value"
+}
+```
+
+Wenn `new_setting` in der bestehenden Installation fehlt, wird es ergänzt. Wenn es bereits existiert, bleibt der bestehende Wert unverändert.
