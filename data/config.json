@@ -10,5 +10,7 @@
   "email_pattern": "vorname.nachname",
   "admin_user": "admin",
   "admin_password_hash": "$2y$10$ztC016/wWAvHL87IQ2pwPezQb8UixMTXNjMnMT0e4IGnW3LkW4Gga",
-  "installed": false
+  "installed": false,
+  "home_redirect_url": "https://example.com",
+  "contact_email": "info@example.com"
 }
