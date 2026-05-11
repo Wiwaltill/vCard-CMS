@@ -14,7 +14,7 @@ include '../includes/header.php';
 
 <h1>Kontakte</h1>
 
-<a href="new.php" class="btn btn-primary">
+<a href="/admin/new" class="btn btn-primary">
 <i class="bi bi-plus-lg"></i> Neuer Kontakt
 </a>
 
@@ -50,7 +50,7 @@ https://vc.kb-events.eu/<?= h($contact['id']) ?>
 
 <div class="d-flex gap-2">
 
-<a href="edit.php?id=<?= h($contact['id']) ?>" class="btn btn-success btn-sm">
+<a href="/admin/edit?id=<?= h($contact['id']) ?>" class="btn btn-success btn-sm">
 <i class="bi bi-pencil"></i>
 </a>
 
@@ -84,7 +84,7 @@ Soll der Kontakt <strong><?= h($contact['vorname']) ?> <?= h($contact['nachname'
 Abbrechen
 </button>
 
-<a href="delete.php?id=<?= h($contact['id']) ?>" class="btn btn-danger">
+<a href="/admin/delete?id=<?= h($contact['id']) ?>" class="btn btn-danger">
 Löschen
 </a>
 
