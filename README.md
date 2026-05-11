@@ -6,6 +6,7 @@
 [![GitHub release](https://img.shields.io/github/v/release/Wiwaltill/vCard-CMS)](https://github.com/Wiwaltill/vCard-CMS/releases/)
 [![License](https://img.shields.io/github/license/Wiwaltill/vCard-CMS)](https://github.com/Wiwaltill/vCard-CMS/blob/main/LICENSE)
 [![issues - vCard-CMS](https://img.shields.io/github/issues/Wiwaltill/vCard-CMS)](https://github.com/Wiwaltill/vCard-CMS/issues)
+[<img alt="Deployed with FTP Deploy Action" src="https://img.shields.io/badge/Deployed With-FTP DEPLOY ACTION-%3CCOLOR%3E">](https://github.com/SamKirkland/FTP-Deploy-Action)
 
 
 Modernes PHP vCard CMS zur Erstellung digitaler Visitenkarten mit Adminbereich, Mehrsprachigkeit, REST API, PWA und Theme-System. Optimiert für einfache Installation ohne Datenbank.
