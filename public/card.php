@@ -28,14 +28,14 @@ $pageUrl = current_url();
 $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=' . urlencode($pageUrl);
 $lang = app_lang($config);
 $theme = theme_name($config);
-$dark = darkmode_default($config);
+$mode = theme_mode($config);
 
 $name = trim(($card['vorname'] ?? '') . ' ' . ($card['nachname'] ?? ''));
 $email = contact_email($card, $config);
 
 ?>
 <!DOCTYPE html>
-<html lang="<?= h($lang) ?>" data-theme="<?= h($theme) ?>" data-bs-theme="<?= $dark ? 'dark' : 'light' ?>">
+<html lang="<?= h($lang) ?>" data-theme="<?= h($theme) ?>" data-bs-theme="<?= h(initial_bs_theme($config)) ?>" data-bs-theme-mode="<?= h($mode) ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -198,6 +198,10 @@ h1 {
     color: var(--company-color);
 }
 
+[data-bs-theme="dark"] .contact-icon {
+    color: #fff;
+}
+
 .actions {
     margin-top: 24px;
     display: flex;
@@ -207,14 +211,38 @@ h1 {
 }
 
 .btn-company {
-    background: var(--company-color);
-    border-color: var(--company-color);
-    color: #fff;
+    --bs-btn-color: #fff;
+    --bs-btn-bg: var(--company-color);
+    --bs-btn-border-color: var(--company-color);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: color-mix(in srgb, var(--company-color) 90%, #000);
+    --bs-btn-hover-border-color: color-mix(in srgb, var(--company-color) 85%, #000);
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: color-mix(in srgb, var(--company-color) 82%, #000);
+    --bs-btn-active-border-color: color-mix(in srgb, var(--company-color) 78%, #000);
+    --bs-btn-disabled-color: #fff;
+    --bs-btn-disabled-bg: var(--company-color);
+    --bs-btn-disabled-border-color: var(--company-color);
 }
 
-.btn-company:hover {
-    filter: brightness(.94);
-    color: #fff;
+[data-bs-theme="light"] .contact-card.cover .btn-company,
+[data-bs-theme="light"] .cover .btn-company {
+    --bs-btn-color: var(--company-color);
+    --bs-btn-bg: #fff;
+    --bs-btn-border-color: #fff;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: var(--company-color);
+    --bs-btn-hover-border-color: #fff;
+}
+
+[data-bs-theme="dark"] .contact-card.cover .btn-company,
+[data-bs-theme="dark"] .cover .btn-company {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: transparent;
+    --bs-btn-border-color: #fff;
+    --bs-btn-hover-color: var(--bs-body-bg);
+    --bs-btn-hover-bg: #fff;
+    --bs-btn-hover-border-color: #fff;
 }
 
 .site-footer {
@@ -243,10 +271,6 @@ html[data-theme="glass"] .contact-card {
     background: rgba(var(--bs-body-bg-rgb), .72);
     color: var(--bs-body-color);
     backdrop-filter: blur(12px);
-}
-
-[data-bs-theme="dark"] .btn-company {
-    color: #fff;
 }
 
 html[data-theme="minimal"] body { background: var(--bs-body-bg); }
@@ -296,7 +320,14 @@ html[data-theme="minimal"] .contact-card { box-shadow:none; border-radius:0; }
 <?php endif; ?>
 <div class="theme-switch">
 <a class="btn btn-sm btn-outline-secondary" href="?lang=<?= $lang === 'de' ? 'en' : 'de' ?>"><?= strtoupper($lang === 'de' ? 'en' : 'de') ?></a>
-<button class="btn btn-sm btn-outline-secondary" id="darkToggle" type="button">☾</button>
+<div class="dropdown">
+<button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="themeModeToggle"><i class="bi bi-circle-half"></i> <span data-theme-mode-label>Auto</span></button>
+<ul class="dropdown-menu dropdown-menu-end">
+<li><button class="dropdown-item" type="button" data-theme-value="auto"><i class="bi bi-circle-half me-2"></i>Auto</button></li>
+<li><button class="dropdown-item" type="button" data-theme-value="light"><i class="bi bi-sun me-2"></i>Light</button></li>
+<li><button class="dropdown-item" type="button" data-theme-value="dark"><i class="bi bi-moon-stars me-2"></i>Dark</button></li>
+</ul>
+</div>
 </div>
 </div>
 </header>
@@ -400,15 +431,25 @@ html[data-theme="minimal"] .contact-card { box-shadow:none; border-radius:0; }
 
 <script>
 (function(){
- const html=document.documentElement, key='vcard-theme';
- const savedTheme = localStorage.getItem(key);
- if(savedTheme) html.setAttribute('data-bs-theme', savedTheme);
- document.getElementById('darkToggle')?.addEventListener('click',()=>{
-   const next = html.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
-   html.setAttribute('data-bs-theme', next);
-   localStorage.setItem(key, next);
- });
- if('serviceWorker' in navigator && <?= !empty($config['pwa_enabled']) ? 'true' : 'false' ?>) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+ const html=document.documentElement, key='vcard-theme-mode';
+ const system=window.matchMedia('(prefers-color-scheme: dark)');
+ const defaultMode=html.getAttribute('data-bs-theme-mode') || 'auto';
+ const label=document.querySelector('[data-theme-mode-label]');
+ function resolved(mode){ return mode === 'auto' ? (system.matches ? 'dark' : 'light') : mode; }
+ function apply(mode,persist){
+   html.setAttribute('data-bs-theme-mode', mode);
+   html.setAttribute('data-bs-theme', resolved(mode));
+   if(label) label.textContent = mode.charAt(0).toUpperCase()+mode.slice(1);
+   document.querySelectorAll('[data-theme-value]').forEach(el=>el.classList.toggle('active', el.dataset.themeValue===mode));
+   if(persist) localStorage.setItem(key, mode);
+ }
+ apply(localStorage.getItem(key)||defaultMode,false);
+ system.addEventListener('change',()=>{ if((localStorage.getItem(key)||defaultMode)==='auto') apply('auto',false); });
+ document.querySelectorAll('[data-theme-value]').forEach(el=>el.addEventListener('click',()=>apply(el.dataset.themeValue,true)));
+
+ if('serviceWorker' in navigator && <?= !empty($config['pwa_enabled']) ? 'true' : 'false' ?>) {
+   window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js', {scope:'/'}).catch(console.error));
+ }
  let deferredPrompt=null; const installBtn=document.getElementById('installPwa');
  window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); deferredPrompt=e; installBtn?.classList.remove('d-none'); });
  installBtn?.addEventListener('click', async()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; installBtn.classList.add('d-none'); });
