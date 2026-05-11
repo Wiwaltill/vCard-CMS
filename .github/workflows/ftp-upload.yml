@@ -2,16 +2,21 @@ name: Deploy via ftp
 on: push
 permissions:
   contents: read
+  
 jobs:
   deploy:
-    name: Deploy
+    name: Checkout and Upload
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Upload ftp
-      uses: sebastianpopp/ftp-action@releases/v2
-      with:
-        host: ${{ secrets.FTP_SERVER }}
-        user: ${{ secrets.FTP_USERNAME }}
-        password: ${{ secrets.FTP_PASSWORD }}
-        forceSsl: true
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Upload Files
+        uses: pontago/lftp-deploy-action@master
+        with:
+          protocol: sftp
+          host: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          ssh_private_key: ${{ secrets.FTP_PASSWORD }}
+          local_dir: ./local/
+          remote_dir: .
