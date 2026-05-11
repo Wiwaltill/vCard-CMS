@@ -12,6 +12,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $config['company_color'] = trim($_POST['company_color']);
     $config['github_url'] = trim($_POST['github_url']);
     $config['logo_link'] = trim($_POST['logo_link']);
+    $config['privacy_url'] = trim($_POST['privacy_url']);
+    $config['imprint_url'] = trim($_POST['imprint_url']);
     $config['email_domain'] = strtolower(trim($_POST['email_domain']));
     $config['email_domain'] = preg_replace('/^@/', '', $config['email_domain']);
     $config['email_pattern'] = $_POST['email_pattern'];
@@ -81,6 +83,16 @@ include '../includes/header.php';
 <div class="mb-3">
 <label class="form-label">GitHub Link</label>
 <input type="url" name="github_url" value="<?= h($config['github_url']) ?>" class="form-control">
+</div>
+
+<div class="mb-3">
+<label class="form-label">Impressum Link</label>
+<input type="url" name="imprint_url" value="<?= h($config['imprint_url']) ?>" class="form-control">
+</div>
+
+<div class="mb-3">
+<label class="form-label">Datenschutz Link</label>
+<input type="url" name="privacy_url" value="<?= h($config['privacy_url']) ?>" class="form-control">
 </div>
 
 <div class="mb-3">
