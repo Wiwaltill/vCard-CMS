@@ -116,20 +116,20 @@ include '../includes/header.php';
 
 ?>
 
-<h1 class="mb-4">Datentypen</h1>
+<h1 class="mb-4"><?= h(admin_t('data_types', $config)) ?></h1>
 
 <div class="alert alert-info">
-<strong>Hinweis zu vCard-Feldern:</strong>
-Mehr Informationen zu möglichen vCard-Feldern und deren Bedeutung findest du auf
+<strong><?= h(admin_t('vcard_fields_note', $config)) ?></strong>
+<?= h(admin_t('vcard_fields_help', $config)) ?>
 <a href="https://de.wikipedia.org/wiki/VCard" target="_blank" rel="noopener">Wikipedia: vCard</a>.
 </div>
 
 <?php if ($success): ?>
-<div class="alert alert-success">Datentypen gespeichert.</div>
+<div class="alert alert-success"><?= h(admin_t('datatypes_saved', $config)) ?></div>
 <?php endif; ?>
 
 <div class="card bg-white shadow-sm mb-4">
-<div class="card-header">Datentypen sortieren und anzeigen</div>
+<div class="card-header"><?= h(admin_t('sort_and_show_datatypes', $config)) ?></div>
 
 <div class="card-body">
 
@@ -140,12 +140,12 @@ Mehr Informationen zu möglichen vCard-Feldern und deren Bedeutung findest du au
 <table class="table table-bordered align-middle">
 <thead>
 <tr>
-<th style="width:70px;">Reihenfolge</th>
-<th>Bezeichnung</th>
-<th style="width:170px;">Typ</th>
-<th style="width:110px;">Anzeigen</th>
-<th style="width:190px;">vCard-Feld optional</th>
-<th style="width:90px;">Löschen</th>
+<th style="width:70px;"><?= h(admin_t('order', $config)) ?></th>
+<th><?= h(admin_t('label', $config)) ?></th>
+<th style="width:170px;"><?= h(admin_t('type', $config)) ?></th>
+<th style="width:110px;"><?= h(admin_t('show', $config)) ?></th>
+<th style="width:190px;"><?= h(admin_t('vcard_field_optional', $config)) ?></th>
+<th style="width:90px;"><?= h(admin_t('delete', $config)) ?></th>
 </tr>
 </thead>
 
@@ -159,16 +159,16 @@ Mehr Informationen zu möglichen vCard-Feldern und deren Bedeutung findest du au
 
 <td>
 <input type="text" name="label[<?= h($type['key']) ?>]" value="<?= h($type['label']) ?>" class="form-control">
-<div class="form-text"><?= h($type['key']) ?><?= !empty($type['builtin']) ? ' · Systemfeld' : '' ?></div>
+<div class="form-text"><?= h($type['key']) ?><?= !empty($type['builtin']) ? ' · ' . h(admin_t('system_field', $config)) : '' ?></div>
 </td>
 
 <td>
 <select name="type[<?= h($type['key']) ?>]" class="form-select" <?= !empty($type['builtin']) ? 'disabled' : '' ?>>
-<option value="text" <?= $type['type'] === 'text' ? 'selected' : '' ?>>Text</option>
-<option value="tel" <?= $type['type'] === 'tel' ? 'selected' : '' ?>>Telefon</option>
+<option value="text" <?= $type['type'] === 'text' ? 'selected' : '' ?>><?= h(admin_t('text', $config)) ?></option>
+<option value="tel" <?= $type['type'] === 'tel' ? 'selected' : '' ?>><?= h(admin_t('phone', $config)) ?></option>
 <option value="email" <?= $type['type'] === 'email' ? 'selected' : '' ?>>E-Mail</option>
 <option value="url" <?= $type['type'] === 'url' ? 'selected' : '' ?>>URL</option>
-<option value="social" <?= $type['type'] === 'social' ? 'selected' : '' ?>>Social Media</option>
+<option value="social" <?= $type['type'] === 'social' ? 'selected' : '' ?>><?= h(admin_t('social_media', $config)) ?></option>
 </select>
 <?php if (!empty($type['builtin'])): ?>
 <input type="hidden" name="type[<?= h($type['key']) ?>]" value="<?= h($type['type']) ?>">
@@ -180,7 +180,7 @@ Mehr Informationen zu möglichen vCard-Feldern und deren Bedeutung findest du au
 </td>
 
 <td>
-<input type="text" name="vcard[<?= h($type['key']) ?>]" value="<?= h($type['vcard'] ?? '') ?>" class="form-control" placeholder="z.B. TEL;TYPE=WORK">
+<input type="text" name="vcard[<?= h($type['key']) ?>]" value="<?= h($type['vcard'] ?? '') ?>" class="form-control" placeholder="<?= h(admin_t('social_auto_help', $config)) ?> TEL;TYPE=WORK">
 </td>
 
 <td class="text-center">
@@ -197,17 +197,17 @@ Mehr Informationen zu möglichen vCard-Feldern und deren Bedeutung findest du au
 </div>
 
 <div class="form-text mb-3">
-Die Reihenfolge kann per Drag & Drop geändert werden. Systemfelder können nicht gelöscht, aber ausgeblendet werden.
+Die <?= h(admin_t('order', $config)) ?> kann per Drag & Drop geändert werden. Systemfelder können nicht gelöscht, aber ausgeblendet werden.
 </div>
 
-<button class="btn btn-success">Speichern</button>
+<button class="btn btn-success"><?= h(admin_t('save', $config)) ?></button>
 </form>
 
 </div>
 </div>
 
 <div class="card bg-white shadow-sm">
-<div class="card-header">Neuen Datentyp hinzufügen</div>
+<div class="card-header"><?= h(admin_t('add_datatype', $config)) ?></div>
 
 <div class="card-body">
 <form method="post">
@@ -215,25 +215,25 @@ Die Reihenfolge kann per Drag & Drop geändert werden. Systemfelder können nich
 
 <div class="row">
 <div class="col-md-4 mb-3">
-<label class="form-label">Typ</label>
+<label class="form-label"><?= h(admin_t('type', $config)) ?></label>
 <select name="new_type" id="new_type" class="form-select">
-<option value="text">Text</option>
-<option value="tel">Telefon</option>
+<option value="text"><?= h(admin_t('text', $config)) ?></option>
+<option value="tel"><?= h(admin_t('phone', $config)) ?></option>
 <option value="email">E-Mail</option>
 <option value="url">URL</option>
-<option value="social">Social Media</option>
+<option value="social"><?= h(admin_t('social_media', $config)) ?></option>
 </select>
 </div>
 
 <div class="col-md-8 mb-3" id="label_group">
-<label class="form-label">Bezeichnung</label>
-<input type="text" name="new_label" id="new_label" class="form-control" placeholder="z.B. Fax, Festnetz, Website">
+<label class="form-label"><?= h(admin_t('label', $config)) ?></label>
+<input type="text" name="new_label" id="new_label" class="form-control" placeholder="Fax, Phone, Website">
 </div>
 
 <div class="col-md-8 mb-3 d-none" id="platform_group">
-<label class="form-label">Social-Media-Plattform</label>
+<label class="form-label"><?= h(admin_t('social_platform', $config)) ?></label>
 <select name="new_platform" id="new_platform" class="form-select">
-<option value="">Bitte wählen</option>
+<option value=""><?= h(admin_t('please_choose', $config)) ?></option>
 <option value="facebook">Facebook</option>
 <option value="instagram">Instagram</option>
 <option value="linkedin">LinkedIn</option>
@@ -243,16 +243,16 @@ Die Reihenfolge kann per Drag & Drop geändert werden. Systemfelder können nich
 <option value="xing">Xing</option>
 </select>
 <div class="form-text">
-Bei Social Media werden Bezeichnung, Key und vCard-Feld automatisch gesetzt, z.B. <code>URL;TYPE=Instagram</code>.
+<?= h(admin_t('social_auto_help', $config)) ?>
 </div>
 </div>
 </div>
 
 <div class="form-text mb-3">
-Bei Social Media reicht im Kontaktformular später der Username. Beispiel: <code>max.mustermann</code>
+<?= h(admin_t('social_username_help', $config)) ?> <code>max.mustermann</code>
 </div>
 
-<button class="btn btn-primary">Datentyp hinzufügen</button>
+<button class="btn btn-primary"><?= h(admin_t('add_datatype_button', $config)) ?></button>
 </form>
 </div>
 </div>
