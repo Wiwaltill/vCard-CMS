@@ -11,7 +11,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $vorname = trim($_POST['vorname']);
     $nachname = trim($_POST['nachname']);
     $id = make_contact_id($vorname, $nachname, $contacts);
-    $email = generate_email($vorname, $nachname, $config);
+
+    $emailOverride = isset($_POST['email_override']);
+    $autoEmail = generate_email($vorname, $nachname, $config);
+    $email = $emailOverride ? trim($_POST['email']) : $autoEmail;
 
     $bild = upload_image('bild', 'mitarbeiter-' . $id);
 
@@ -21,6 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'nachname' => $nachname,
         'telefon' => $_POST['telefon'],
         'email' => $email,
+        'email_override' => $emailOverride,
         'position' => $_POST['position'],
         'bild' => $bild
     ];
@@ -41,18 +45,27 @@ include '../includes/header.php';
 
 <div class="mb-3">
 <label class="form-label">Vorname</label>
-<input type="text" name="vorname" class="form-control" required>
+<input type="text" name="vorname" id="vorname" class="form-control" required>
 </div>
 
 <div class="mb-3">
 <label class="form-label">Nachname</label>
-<input type="text" name="nachname" class="form-control" required>
+<input type="text" name="nachname" id="nachname" class="form-control" required>
 </div>
 
 <div class="mb-3">
-<label class="form-label">E-Mail Schema</label>
-<input type="text" class="form-control" value="<?= h(email_pattern_label($config['email_pattern'])) ?> mit @<?= h($config['email_domain']) ?>" disabled>
-<div class="form-text">Die E-Mail wird beim Speichern automatisch aus Vor- und Nachname erstellt.</div>
+<label class="form-label">E-Mail</label>
+<input type="email" name="email" id="email" class="form-control" disabled>
+<div class="form-text">
+Standardmäßig automatisch nach Schema: <?= h(email_pattern_label($config['email_pattern'])) ?> mit @<?= h($config['email_domain']) ?>
+</div>
+</div>
+
+<div class="form-check mb-3">
+<input class="form-check-input" type="checkbox" name="email_override" id="email_override">
+<label class="form-check-label" for="email_override">
+Automatische E-Mail überschreiben
+</label>
 </div>
 
 <div class="mb-3">
@@ -74,5 +87,21 @@ include '../includes/header.php';
 <a href="/admin" class="btn btn-secondary">Abbrechen</a>
 
 </form>
+
+<script>
+const overrideCheckbox = document.getElementById('email_override');
+const emailInput = document.getElementById('email');
+
+function toggleEmailField() {
+    emailInput.disabled = !overrideCheckbox.checked;
+
+    if (!overrideCheckbox.checked) {
+        emailInput.value = '';
+    }
+}
+
+overrideCheckbox.addEventListener('change', toggleEmailField);
+toggleEmailField();
+</script>
 
 <?php include '../includes/footer.php'; ?>
