@@ -12,7 +12,12 @@ RewriteRule ^install/?$ install.php [L,QSA]
 RewriteRule ^$ index.php [L,QSA]
 
 RewriteRule ^admin/?$ admin/index.php [L]
-RewriteRule ^admin/(login|logout|settings|new|edit|delete|datatypes)$ admin/$1.php [L,QSA]
+RewriteRule ^admin/(login|logout|settings|new|edit|delete|datatypes|import_export|backup|api)$ admin/$1.php [L,QSA]
+RewriteRule ^api/contacts/?$ api.php [L,QSA]
+RewriteRule ^api/contacts/([a-z0-9]{2,20})/?$ api.php?id=$1 [L,QSA]
+RewriteRule ^manifest.webmanifest$ manifest.php [L,QSA]
+RewriteRule ^sw.js$ sw.php [L,QSA]
+RewriteRule ^qr/([a-z0-9]{2,20})/(png|svg)$ qr.php?id=$1&format=$2 [L,QSA]
 
 RewriteRule ^([a-z0-9]{2,6})$ card.php?id=$1 [L,QSA]
 RewriteRule ^([a-z0-9]{2,6})/vcard$ vcard.php?id=$1 [L,QSA]
