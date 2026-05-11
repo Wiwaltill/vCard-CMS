@@ -31,6 +31,36 @@
       "builtin": true,
       "sort": 20,
       "vcard": "EMAIL"
+    },
+    {
+      "key": "instagram",
+      "label": "Instagram",
+      "type": "social",
+      "platform": "instagram",
+      "enabled": false,
+      "builtin": false,
+      "sort": 100,
+      "vcard": "URL;TYPE=Instagram"
+    },
+    {
+      "key": "facebook",
+      "label": "Facebook",
+      "type": "social",
+      "platform": "facebook",
+      "enabled": false,
+      "builtin": false,
+      "sort": 110,
+      "vcard": "URL;TYPE=Facebook"
+    },
+    {
+      "key": "linkedin",
+      "label": "LinkedIn",
+      "type": "social",
+      "platform": "linkedin",
+      "enabled": false,
+      "builtin": false,
+      "sort": 120,
+      "vcard": "URL;TYPE=LinkedIn"
     }
   ]
 }
