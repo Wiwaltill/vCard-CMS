@@ -113,7 +113,10 @@ include '../includes/header.php';
 <?php endif; ?>
 <div class="col-md-6 mb-3">
 <label class="form-label"><?= h($type['label']) ?></label>
-<input type="<?= h($type['type']) ?>" name="<?= h(data_type_input_name($type['key'])) ?>" value="<?= h(data_type_value($current, $type, $config)) ?>" class="form-control">
+<input type="<?= h($type['type'] === 'social' ? 'text' : $type['type']) ?>" name="<?= h(data_type_input_name($type['key'])) ?>" value="<?= h(data_type_value($current, $type, $config)) ?>" class="form-control">
+<?php if (($type['type'] ?? '') === 'social'): ?>
+<div class="form-text">Username oder vollständige Profil-URL eintragen.</div>
+<?php endif; ?>
 </div>
 <?php endforeach; ?>
 </div>
@@ -139,7 +142,10 @@ Automatische E-Mail überschreiben
 <?php endif; ?>
 <div class="mb-3">
 <label class="form-label"><?= h($type['label']) ?></label>
-<input type="<?= h($type['type']) ?>" name="<?= h(data_type_input_name($type['key'])) ?>" value="<?= h(data_type_value($current, $type, $config)) ?>" class="form-control">
+<input type="<?= h($type['type'] === 'social' ? 'text' : $type['type']) ?>" name="<?= h(data_type_input_name($type['key'])) ?>" value="<?= h(data_type_value($current, $type, $config)) ?>" class="form-control">
+<?php if (($type['type'] ?? '') === 'social'): ?>
+<div class="form-text">Username oder vollständige Profil-URL eintragen.</div>
+<?php endif; ?>
 </div>
 <?php endforeach; ?>
 
