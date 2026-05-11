@@ -1,0 +1,16 @@
+{
+  "company_name": "Demo Company",
+  "company_color": "#0d6efd",
+  "company_logo": "",
+  "github_url": "",
+  "logo_link": "https://example.com",
+  "privacy_url": "https://example.com/privacy",
+  "imprint_url": "https://example.com/imprint",
+  "email_domain": "example.com",
+  "email_pattern": "vorname.nachname",
+  "admin_user": "admin",
+  "admin_password_hash": "$2y$10$ztC016/wWAvHL87IQ2pwPezQb8UixMTXNjMnMT0e4IGnW3LkW4Gga",
+  "installed": false,
+  "home_redirect_url": "https://example.com",
+  "contact_email": "info@example.com"
+}
