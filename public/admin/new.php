@@ -1,6 +1,7 @@
 <?php
 
 require_once '../includes/functions.php';
+require_installed();
 require_login();
 
 $config = get_config();
