@@ -281,7 +281,8 @@ function normalize_data_types(array $dataTypes): array
             'enabled' => !empty($type['enabled']),
             'builtin' => !empty($type['builtin']),
             'sort' => (int)($type['sort'] ?? (($index + 1) * 10)),
-            'vcard' => $type['vcard'] ?? ''
+            'vcard' => $type['vcard'] ?? '',
+            'platform' => $type['platform'] ?? ''
         ];
     }
 
@@ -377,12 +378,52 @@ function data_type_href(array $type, string $value): string
         return 'https://' . $value;
     }
 
+    if ($kind === 'social') {
+        if (preg_match('/^https?:\/\//i', $value)) {
+            return $value;
+        }
+
+        $username = ltrim(trim($value), '@');
+        $platform = strtolower($type['platform'] ?? '');
+
+        $bases = [
+            'facebook' => 'https://www.facebook.com/',
+            'instagram' => 'https://www.instagram.com/',
+            'linkedin' => 'https://www.linkedin.com/in/',
+            'tiktok' => 'https://www.tiktok.com/@',
+            'x' => 'https://x.com/',
+            'youtube' => 'https://www.youtube.com/@'
+        ];
+
+        if (isset($bases[$platform])) {
+            return $bases[$platform] . $username;
+        }
+
+        return '';
+    }
+
     return '';
 }
 
 function data_type_svg_icon(array $type): string
 {
     $kind = $type['type'] ?? 'text';
+
+    if ($kind === 'social') {
+        $platform = strtolower($type['platform'] ?? '');
+        $icons = [
+            'facebook' => 'bi-facebook',
+            'instagram' => 'bi-instagram',
+            'linkedin' => 'bi-linkedin',
+            'tiktok' => 'bi-tiktok',
+            'x' => 'bi-twitter-x',
+            'youtube' => 'bi-youtube'
+        ];
+
+        $icon = $icons[$platform] ?? 'bi-share';
+
+        return '<i class="bi ' . $icon . ' contact-icon"></i>';
+    }
 
     if ($kind === 'email') {
         return '<svg class="contact-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a2 2 0 0 0-2 2v1.161l8.441 4.221a1.25 1.25 0 0 0 1.118 0L19 7.162V6a2 2 0 0 0-2-2H3Z"></path><path d="m19 8.839-7.77 3.885a2.75 2.75 0 0 1-2.46 0L1 8.839V14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.839Z"></path></svg>';
