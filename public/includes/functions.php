@@ -71,6 +71,13 @@ function merge_missing_keys(array $current, array $sample): array
             continue;
         }
 
+        // Datentypen sind Nutzer-Konfiguration.
+        // Sie dürfen bei Updates nicht über numerische Array-Indizes erneut ergänzt werden,
+        // sonst tauchen gelöschte Datentypen nach einem Update wieder auf.
+        if ($key === 'data_types') {
+            continue;
+        }
+
         if (is_array($value) && is_array($current[$key])) {
             $current[$key] = merge_missing_keys($current[$key], $value);
         }
