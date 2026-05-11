@@ -12,7 +12,7 @@
 
     <?php if (!empty($config['github_url'])): ?>
       <div>
-        <a href="<?= h($config['github_url']) ?>" target="_blank" rel="noopener">
+        <a href="<?= h($config['github_url']) ?>" target="_blank" rel="noopener" style="text-decoration:none;">
           <i class="bi bi-github"></i> GitHub
         </a>
       </div>
