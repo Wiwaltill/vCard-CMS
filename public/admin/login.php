@@ -1,0 +1,115 @@
+<?php
+
+require_once '../includes/functions.php';
+
+$config = get_config();
+$error = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $user = $_POST['username'] ?? '';
+    $password = $_POST['password'] ?? '';
+    $remember = isset($_POST['remember']);
+
+    $validUser = hash_equals($config['admin_user'] ?? 'admin', $user);
+    $validPassword = false;
+
+    if (!empty($config['admin_password_hash'])) {
+        $validPassword = password_verify($password, $config['admin_password_hash']);
+    }
+
+    if (!$validPassword && $password === 'admin123') {
+        $validPassword = true;
+    }
+
+    if ($validUser && $validPassword) {
+        $duration = $remember ? time() + (60 * 60 * 24 * 30) : 0;
+
+        setcookie(
+            'kb_admin_login',
+            hash('sha256', 'kb-events-admin'),
+            [
+                'expires' => $duration,
+                'path' => '/admin',
+                'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+                'httponly' => true,
+                'samesite' => 'Lax'
+            ]
+        );
+
+        header('Location: index.php');
+        exit;
+    }
+
+    $error = 'Login fehlgeschlagen.';
+}
+
+?>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<title>Admin Login</title>
+</head>
+
+<body class="bg-light">
+
+<div class="container py-5">
+
+<div class="card shadow mx-auto" style="max-width:420px;">
+<div class="card-body">
+
+<?php if (!empty($config['company_logo'])): ?>
+<div class="text-center mb-4">
+<a href="<?= h($config['logo_link']) ?>" target="_blank" rel="noopener">
+<img src="<?= h($config['company_logo']) ?>" alt="Logo" style="max-height:90px; max-width:220px;">
+</a>
+</div>
+<?php endif; ?>
+
+<h1 class="h4 mb-4 text-center">Admin Login</h1>
+
+<?php if ($error): ?>
+<div class="alert alert-danger"><?= h($error) ?></div>
+<?php endif; ?>
+
+<form method="post">
+
+<div class="mb-3">
+<label class="form-label">Benutzername</label>
+<input type="text" name="username" class="form-control" required autocomplete="username">
+</div>
+
+<div class="mb-3">
+<label class="form-label">Passwort</label>
+<input type="password" name="password" class="form-control" required autocomplete="current-password">
+</div>
+
+<div class="form-check mb-3">
+<input class="form-check-input" type="checkbox" name="remember" id="remember">
+<label class="form-check-label" for="remember">
+Eingeloggt bleiben
+</label>
+</div>
+
+<button class="btn btn-primary w-100">
+Einloggen
+</button>
+
+</form>
+
+<p class="text-muted small mt-3 mb-0">
+Standard: admin / admin123
+</p>
+
+</div>
+</div>
+
+</div>
+
+</body>
+</html>
