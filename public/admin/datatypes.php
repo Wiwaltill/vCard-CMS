@@ -14,8 +14,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'save') {
         $updated = [];
 
+        $typesByKey = [];
         foreach ($types as $type) {
-            $key = $type['key'];
+            $typesByKey[$type['key']] = $type;
+        }
+
+        $orderedKeys = $_POST['order'] ?? array_keys($typesByKey);
+        $position = 10;
+
+        foreach ($orderedKeys as $key) {
+            if (!isset($typesByKey[$key])) {
+                continue;
+            }
+
+            $type = $typesByKey[$key];
 
             if (isset($_POST['delete'][$key]) && empty($type['builtin'])) {
                 continue;
@@ -27,10 +39,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'type' => $_POST['type'][$key] ?? $type['type'],
                 'enabled' => isset($_POST['enabled'][$key]),
                 'builtin' => !empty($type['builtin']),
-                'sort' => (int)($_POST['sort'][$key] ?? $type['sort']),
+                'sort' => $position,
                 'vcard' => trim($_POST['vcard'][$key] ?? ($type['vcard'] ?? '')),
                 'platform' => ($type['platform'] ?? '')
             ];
+
+            $position += 10;
         }
 
         $config['data_types'] = normalize_data_types($updated);
@@ -126,7 +140,7 @@ Mehr Informationen zu möglichen vCard-Feldern und deren Bedeutung findest du au
 <table class="table table-bordered align-middle">
 <thead>
 <tr>
-<th style="width:90px;">Sort.</th>
+<th style="width:70px;">Reihenfolge</th>
 <th>Bezeichnung</th>
 <th style="width:170px;">Typ</th>
 <th style="width:110px;">Anzeigen</th>
@@ -135,11 +149,12 @@ Mehr Informationen zu möglichen vCard-Feldern und deren Bedeutung findest du au
 </tr>
 </thead>
 
-<tbody>
+<tbody id="datatypeRows">
 <?php foreach ($types as $type): ?>
-<tr>
+<tr draggable="true" data-key="<?= h($type['key']) ?>">
 <td>
-<input type="number" name="sort[<?= h($type['key']) ?>]" value="<?= h((string)$type['sort']) ?>" class="form-control">
+<span class="btn btn-light btn-sm drag-handle" title="Drag & Drop"><i class="bi bi-grip-vertical"></i></span>
+<input type="hidden" name="order[]" value="<?= h($type['key']) ?>" class="order-input">
 </td>
 
 <td>
@@ -172,7 +187,7 @@ Mehr Informationen zu möglichen vCard-Feldern und deren Bedeutung findest du au
 <?php if (empty($type['builtin'])): ?>
 <input type="checkbox" name="delete[<?= h($type['key']) ?>]" class="form-check-input">
 <?php else: ?>
-<span class="text-muted">—</span>
+<span class="text-body-secondary">—</span>
 <?php endif; ?>
 </td>
 </tr>
@@ -182,7 +197,7 @@ Mehr Informationen zu möglichen vCard-Feldern und deren Bedeutung findest du au
 </div>
 
 <div class="form-text mb-3">
-Die Reihenfolge wird über die Sortierung bestimmt. Systemfelder können nicht gelöscht, aber ausgeblendet werden.
+Die Reihenfolge kann per Drag & Drop geändert werden. Systemfelder können nicht gelöscht, aber ausgeblendet werden.
 </div>
 
 <button class="btn btn-success">Speichern</button>
@@ -270,4 +285,12 @@ toggleNewFieldMode();
 </script>
 
 
+<script>
+const tbody = document.getElementById('datatypeRows');
+let dragged = null;
+function syncOrder(){ [...tbody.querySelectorAll('tr')].forEach(tr=>{ const input=tr.querySelector('.order-input'); if(input) input.value=tr.dataset.key; }); }
+tbody?.addEventListener('dragstart', e => { dragged = e.target.closest('tr'); e.dataTransfer.effectAllowed='move'; });
+tbody?.addEventListener('dragover', e => { e.preventDefault(); const tr=e.target.closest('tr'); if(!tr||tr===dragged) return; const box=tr.getBoundingClientRect(); tbody.insertBefore(dragged, e.clientY < box.top + box.height/2 ? tr : tr.nextSibling); syncOrder(); });
+tbody?.addEventListener('drop', e => { e.preventDefault(); syncOrder(); });
+</script>
 <?php include '../includes/footer.php'; ?>
