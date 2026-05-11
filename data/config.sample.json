@@ -12,5 +12,25 @@
   "admin_password_hash": "$2y$10$ztC016/wWAvHL87IQ2pwPezQb8UixMTXNjMnMT0e4IGnW3LkW4Gga",
   "installed": false,
   "home_redirect_url": "https://example.com",
-  "contact_email": "info@example.com"
+  "contact_email": "info@example.com",
+  "data_types": [
+    {
+      "key": "phone",
+      "label": "Telefon",
+      "type": "tel",
+      "enabled": true,
+      "builtin": true,
+      "sort": 10,
+      "vcard": "TEL;TYPE=CELL"
+    },
+    {
+      "key": "email",
+      "label": "E-Mail",
+      "type": "email",
+      "enabled": true,
+      "builtin": true,
+      "sort": 20,
+      "vcard": "EMAIL"
+    }
+  ]
 }
