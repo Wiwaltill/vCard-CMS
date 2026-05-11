@@ -127,20 +127,12 @@ include '../includes/header.php';
 <iframe name="backupDownloadFrame" class="d-none" id="backupDownloadFrame"></iframe>
 <script>
 (function () {
-    const frame = document.getElementById('backupDownloadFrame');
-    if (!frame) return;
-
-    let shouldReload = false;
     document.querySelectorAll('form[data-reload-after-download="1"]').forEach((form) => {
         form.addEventListener('submit', () => {
-            shouldReload = true;
+            window.setTimeout(() => {
+                window.location.href = window.location.pathname + '?backup_created=1';
+            }, 700);
         });
-    });
-
-    frame.addEventListener('load', () => {
-        if (!shouldReload) return;
-        shouldReload = false;
-        window.location.href = window.location.pathname + '?backup_created=1';
     });
 })();
 </script>
