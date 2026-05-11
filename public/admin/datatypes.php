@@ -186,14 +186,14 @@ Die Reihenfolge wird über die Sortierung bestimmt. Systemfelder können nicht g
 <input type="hidden" name="action" value="add">
 
 <div class="row">
-<div class="col-md-8 mb-3">
+<div class="col-md-5 mb-3">
 <label class="form-label">Bezeichnung</label>
-<input type="text" name="new_label" class="form-control" placeholder="z.B. Fax, Festnetz, LinkedIn">
+<input type="text" name="new_label" class="form-control" placeholder="z.B. Fax, Festnetz, Instagram">
 </div>
 
-<div class="col-md-4 mb-3">
+<div class="col-md-3 mb-3">
 <label class="form-label">Typ</label>
-<select name="new_type" class="form-select">
+<select name="new_type" id="new_type" class="form-select">
 <option value="text">Text</option>
 <option value="tel">Telefon</option>
 <option value="email">E-Mail</option>
@@ -201,11 +201,10 @@ Die Reihenfolge wird über die Sortierung bestimmt. Systemfelder können nicht g
 <option value="social">Social Media</option>
 </select>
 </div>
-</div>
 
-<div class="mb-3">
-<label class="form-label">Social-Media-Plattform optional</label>
-<select name="new_platform" class="form-select">
+<div class="col-md-4 mb-3">
+<label class="form-label">Social-Media-Plattform</label>
+<select name="new_platform" id="new_platform" class="form-select">
 <option value="">—</option>
 <option value="facebook">Facebook</option>
 <option value="instagram">Instagram</option>
@@ -216,13 +215,34 @@ Die Reihenfolge wird über die Sortierung bestimmt. Systemfelder können nicht g
 <option value="xing">Xing</option>
 </select>
 <div class="form-text">
-Bei Social Media reicht im Kontaktformular später der Username. Beispiel: <code>max.mustermann</code>
+Nur relevant bei Typ „Social Media“.
 </div>
+</div>
+</div>
+
+<div class="form-text mb-3">
+Bei Social Media reicht im Kontaktformular später der Username. Beispiel: <code>max.mustermann</code>
 </div>
 
 <button class="btn btn-primary">Datentyp hinzufügen</button>
 </form>
 </div>
 </div>
+
+<script>
+const typeSelect = document.getElementById('new_type');
+const platformSelect = document.getElementById('new_platform');
+
+function togglePlatform() {
+    platformSelect.disabled = typeSelect.value !== 'social';
+    if (typeSelect.value !== 'social') {
+        platformSelect.value = '';
+    }
+}
+
+typeSelect.addEventListener('change', togglePlatform);
+togglePlatform();
+</script>
+
 
 <?php include '../includes/footer.php'; ?>
