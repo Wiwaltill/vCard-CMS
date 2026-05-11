@@ -3,9 +3,9 @@
     "id": "am",
     "vorname": "Alex",
     "nachname": "Mustermann",
-    "firma": "KB Events",
     "telefon": "+49123456789",
     "email": "alex@kb-events.eu",
+    "position": "Eventmanagement",
     "bild": ""
   }
 ]
