@@ -11,6 +11,11 @@ $url = contact_url($contact);
 $remote = 'https://api.qrserver.com/v1/create-qr-code/?size=800x800&format=' . $format . '&data=' . urlencode($url);
 $data = @file_get_contents($remote);
 if ($data === false) { header('Location: '.$remote); exit; }
-header('Content-Type: ' . ($format === 'svg' ? 'image/svg+xml' : 'image/png'));
-header('Content-Disposition: attachment; filename="qr-' . preg_replace('/[^a-z0-9_-]/i','',$id) . '.' . $format . '"');
+$filename = 'qr-' . preg_replace('/[^a-z0-9_-]/i','',$id) . '.' . $format;
+header('Content-Type: application/octet-stream');
+header('Content-Disposition: attachment; filename="' . $filename . '"');
+header('Content-Transfer-Encoding: binary');
+header('X-Content-Type-Options: nosniff');
+header('Cache-Control: private, max-age=0, must-revalidate');
+header('Content-Length: ' . strlen($data));
 echo $data;
