@@ -553,3 +553,46 @@ Das System setzt automatisch:
 - vCard-Feld, z.B. `URL;TYPE=Instagram`
 
 - Vereinfachung: Die Plattform-Spalte wurde aus der Datentypen-Übersicht entfernt. Social-Plattformen werden nur noch beim Anlegen ausgewählt.
+
+## Erweiterungen in dieser Version
+
+Diese Variante baut auf v8.5 auf und ergänzt die angefragten Funktionen weiterhin ohne Datenbank:
+
+- Mehrsprachigkeit Deutsch/Englisch für öffentliche Kontaktseiten über `language` in den Einstellungen und `?lang=de|en`
+- Theme-System mit `classic`, `minimal` und `glass`
+- Darkmode für Kontaktseiten und Adminbereich
+- Drag-and-Drop-Sortierung der Datentypen im Adminbereich
+- CSV-Import und CSV-Export unter `/admin/import_export`
+- REST API unter `/api/contacts` und `/api/contacts/{id}` mit `X-API-Token`
+- API-Verwaltung und Token-Rotation unter `/admin/api`
+- PWA-Manifest und Service Worker für „Zum Homescreen hinzufügen“
+- QR-Code-Download als PNG und SVG über `/qr/{id}/png` und `/qr/{id}/svg`
+- Backup/Restore als ZIP unter `/admin/backup`
+
+Nicht enthalten sind bewusst Analytics sowie Rollen/Rechte für mehrere Admins.
+
+### REST API Kurzreferenz
+
+Header:
+
+```http
+X-API-Token: dein-token-aus-dem-adminbereich
+```
+
+Endpoints:
+
+```text
+GET    /api/contacts
+GET    /api/contacts/{id}
+POST   /api/contacts
+PUT    /api/contacts/{id}
+DELETE /api/contacts/{id}
+```
+
+POST/PUT erwarten JSON. Die Kontaktstruktur entspricht der Datei `data/contacts.json`.
+
+### Hinweise
+
+Der QR-Code-Download nutzt denselben externen QR-Service wie das bestehende QR-Popup. Falls der Webserver ausgehende Requests blockiert, leitet der Endpoint direkt zum QR-Service weiter.
+
+Für Backup/Restore muss die PHP-Erweiterung `ZipArchive` verfügbar sein.
