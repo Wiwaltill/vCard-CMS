@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'builtin' => !empty($type['builtin']),
                 'sort' => (int)($_POST['sort'][$key] ?? $type['sort']),
                 'vcard' => trim($_POST['vcard'][$key] ?? ($type['vcard'] ?? '')),
-                'platform' => $_POST['platform'][$key] ?? ($type['platform'] ?? '')
+                'platform' => ($type['platform'] ?? '')
             ];
         }
 
@@ -129,7 +129,6 @@ Mehr Informationen zu möglichen vCard-Feldern und deren Bedeutung findest du au
 <th style="width:90px;">Sort.</th>
 <th>Bezeichnung</th>
 <th style="width:170px;">Typ</th>
-<th style="width:170px;">Plattform</th>
 <th style="width:110px;">Anzeigen</th>
 <th style="width:190px;">vCard-Feld optional</th>
 <th style="width:90px;">Löschen</th>
@@ -159,19 +158,6 @@ Mehr Informationen zu möglichen vCard-Feldern und deren Bedeutung findest du au
 <?php if (!empty($type['builtin'])): ?>
 <input type="hidden" name="type[<?= h($type['key']) ?>]" value="<?= h($type['type']) ?>">
 <?php endif; ?>
-</td>
-
-<td>
-<select name="platform[<?= h($type['key']) ?>]" class="form-select">
-<option value="" <?= empty($type['platform']) ? 'selected' : '' ?>>—</option>
-<option value="facebook" <?= ($type['platform'] ?? '') === 'facebook' ? 'selected' : '' ?>>Facebook</option>
-<option value="instagram" <?= ($type['platform'] ?? '') === 'instagram' ? 'selected' : '' ?>>Instagram</option>
-<option value="linkedin" <?= ($type['platform'] ?? '') === 'linkedin' ? 'selected' : '' ?>>LinkedIn</option>
-<option value="tiktok" <?= ($type['platform'] ?? '') === 'tiktok' ? 'selected' : '' ?>>TikTok</option>
-<option value="x" <?= ($type['platform'] ?? '') === 'x' ? 'selected' : '' ?>>X</option>
-<option value="youtube" <?= ($type['platform'] ?? '') === 'youtube' ? 'selected' : '' ?>>YouTube</option>
-<option value="xing" <?= ($type['platform'] ?? '') === 'xing' ? 'selected' : '' ?>>Xing</option>
-</select>
 </td>
 
 <td class="text-center">
