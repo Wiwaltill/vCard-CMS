@@ -1,18 +1,15 @@
 name: Deploy via ftp
 on: push
-permissions:
-  contents: read
-  
+
 jobs:
-  deploy:
-    name: Checkout and Upload
+  build:
     runs-on: ubuntu-latest
     steps:
-    - uses: joutvhu/ftp-transfer@v1
-      with:
-        host: ${{ secrets.FTP_SERVER }}
-        port: 22
-        username: ${{ secrets.FTP_USERNAME }}
-        password: ${{ secrets.FTP_PASSWORD }}
-        commands: |
-          put ./ ./
+      - uses: actions/checkout@v4
+      # Here is the deployment action
+      - name: Upload from public_html via FTP
+        uses: airvzxf/ftp-deployment-action@latest
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          user: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
