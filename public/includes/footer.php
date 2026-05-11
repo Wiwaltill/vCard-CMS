@@ -10,11 +10,13 @@
 &copy; <?= date('Y') ?> <?= h($config['company_name']) ?>
 </div>
 
+<?php if (!empty($config['github_url'])): ?>
 <div>
 <a href="<?= h($config['github_url']) ?>" target="_blank" rel="noopener">
 <i class="bi bi-github"></i> GitHub
 </a>
 </div>
+<?php endif; ?>
 
 </div>
 </footer>
