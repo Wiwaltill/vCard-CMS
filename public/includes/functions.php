@@ -405,6 +405,24 @@ function data_type_href(array $type, string $value): string
     return '';
 }
 
+
+function data_type_output_value(array $type, string $value): string
+{
+    $kind = $type['type'] ?? 'text';
+
+    if ($kind === 'url' || $kind === 'social') {
+        return data_type_href($type, $value);
+    }
+
+    return $value;
+}
+
+function data_type_opens_new_tab(array $type): bool
+{
+    return in_array(($type['type'] ?? ''), ['url', 'social'], true);
+}
+
+
 function data_type_svg_icon(array $type): string
 {
     $kind = $type['type'] ?? 'text';
