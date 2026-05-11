@@ -1,5 +1,7 @@
 name: Deploy via ftp
 on: push
+permissions:
+  contents: read
 jobs:
   deploy:
     name: Deploy
