@@ -75,6 +75,13 @@ footer {
 </a>
 </li>
 
+
+<li class="nav-item">
+<a class="nav-link" href="/admin/datatypes">
+<i class="bi bi-list-check"></i> Datentypen
+</a>
+</li>
+
 <li class="nav-item">
 <a class="nav-link" href="/admin/settings">
 <i class="bi bi-gear"></i> Einstellungen
