@@ -20,8 +20,10 @@ foreach ($contacts as $contact) {
             $vcard .= "TITLE:{$contact['position']}\r\n";
         }
 
+        $email = contact_email($contact, $config);
+
         $vcard .= "TEL:{$contact['telefon']}\r\n";
-        $vcard .= "EMAIL:{$contact['email']}\r\n";
+        $vcard .= "EMAIL:{$email}\r\n";
         $vcard .= "END:VCARD\r\n";
 
         header('Content-Type: text/vcard; charset=utf-8');
