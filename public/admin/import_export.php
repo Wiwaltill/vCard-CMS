@@ -30,7 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_FILES['csv']['tmp_name']))
             $id = trim($row['id'] ?? '');
             $existing = ($id !== '' && isset($byId[$id])) ? $contacts[$byId[$id]] : [];
             $contact = csv_row_to_contact($row, $config, $existing);
-            if ($id !== '' && isset($byId[$id])) $contacts[$byId[$id]] = $contact; else $contacts[] = $contact;
+            if ($id !== '' && isset($byId[$id])) $contacts[$byId[$id]] = $contact;
+            else $contacts[] = $contact;
             $count++;
         }
     }
@@ -41,14 +42,19 @@ include '../includes/header.php';
 ?>
 <h1 class="mb-4"><?= h(admin_t('csv_import_export', $config)) ?></h1>
 <?php if ($message): ?><div class="alert alert-success"><?= h($message) ?></div><?php endif; ?>
-<div class="card shadow-sm mb-4"><div class="card-body">
-<a href="/admin/import_export?export=1" class="btn btn-primary"><i class="bi bi-download"></i> <?= h(admin_t('export_contacts_csv', $config)) ?></a>
-</div></div>
-<div class="card shadow-sm"><div class="card-header"><?= h(admin_t('import_csv', $config)) ?></div><div class="card-body">
-<form method="post" enctype="multipart/form-data">
-<input type="file" name="csv" accept=".csv,text/csv" class="form-control mb-3" required>
-<p class="text-body-secondary small"><?= h(admin_t('csv_import_help', $config)) ?></p>
-<button class="btn btn-success"><i class="bi bi-upload"></i> <?= h(admin_t('start_import', $config)) ?></button>
-</form>
-</div></div>
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <a href="/admin/import_export?export=1" class="btn btn-primary"><i class="bi bi-download"></i> <?= h(admin_t('export_contacts_csv', $config)) ?></a>
+    </div>
+</div>
+<div class="card shadow-sm">
+    <div class="card-header"><?= h(admin_t('import_csv', $config)) ?></div>
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+            <input type="file" name="csv" accept=".csv,text/csv" class="form-control mb-3" required>
+            <p class="text-body-secondary small"><?= h(admin_t('csv_import_help', $config)) ?></p>
+            <button class="btn btn-success"><i class="bi bi-upload"></i> <?= h(admin_t('start_import', $config)) ?></button>
+        </form>
+    </div>
+</div>
 <?php include '../includes/footer.php'; ?>

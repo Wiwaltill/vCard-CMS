@@ -243,7 +243,7 @@ include '../includes/header.php';
                         <option value="xing">Xing</option>
                     </select>
                     <div class="form-text">
-                        <?= h(admin_t('social_auto_help', $config)) ?> <code>URL;TYPE=Instagram</code> <br/>
+                        <?= h(admin_t('social_auto_help', $config)) ?> <code>URL;TYPE=Instagram</code> <br />
                         <?= h(admin_t('social_username_help', $config)) ?> <code>max.mustermann</code>
                     </div>
                 </div>
