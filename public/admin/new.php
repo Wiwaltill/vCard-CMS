@@ -62,11 +62,16 @@ include '../includes/header.php';
 </div>
 
 <div class="col-md-6 mb-3">
+<label class="form-label">Telefon</label>
+<input type="text" name="telefon" class="form-control">
+</div>
+</div>
+
+<div class="mb-3">
 <label class="form-label">E-Mail</label>
 <input type="email" name="email" id="email" class="form-control" disabled>
 <div class="form-text">
 Automatisch: <?= h(email_pattern_label($config['email_pattern'])) ?> mit @<?= h($config['email_domain']) ?>
-</div>
 </div>
 </div>
 
@@ -78,10 +83,6 @@ Automatische E-Mail überschreiben
 </div>
 
 <div class="row">
-<div class="col-md-6 mb-3">
-<label class="form-label">Telefon</label>
-<input type="text" name="telefon" class="form-control">
-</div>
 
 <div class="col-md-6 mb-3">
 <label class="form-label">Mitarbeiterfoto</label>
