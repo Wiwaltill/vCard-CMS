@@ -1,6 +1,7 @@
 <?php
 
 require_once '../includes/functions.php';
+require_installed();
 
 $config = get_config();
 $error = '';
@@ -15,10 +16,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!empty($config['admin_password_hash'])) {
         $validPassword = password_verify($password, $config['admin_password_hash']);
-    }
-
-    if (!$validPassword && $password === 'admin123') {
-        $validPassword = true;
     }
 
     if ($validUser && $validPassword) {
@@ -101,10 +98,6 @@ Einloggen
 </button>
 
 </form>
-
-<p class="text-muted small mt-3 mb-0">
-Standard: admin / admin123
-</p>
 
 </div>
 </div>
