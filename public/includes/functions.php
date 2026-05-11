@@ -221,6 +221,27 @@ function delete_public_file(?string $publicPath): bool
 }
 
 
+
+function base_domain_from_host(?string $host = null): string
+{
+    $host = $host ?: ($_SERVER['HTTP_HOST'] ?? 'example.com');
+    $host = strtolower(preg_replace('/:\d+$/', '', $host));
+    $parts = explode('.', $host);
+
+    if (count($parts) >= 2) {
+        return implode('.', array_slice($parts, -2));
+    }
+
+    return $host ?: 'example.com';
+}
+
+function default_url_for_base_domain(string $baseDomain, string $path = ''): string
+{
+    $path = '/' . ltrim($path, '/');
+    return 'https://' . $baseDomain . ($path === '/' ? '' : $path);
+}
+
+
 function is_installed(): bool
 {
     $config = get_config();
