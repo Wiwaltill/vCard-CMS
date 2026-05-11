@@ -42,7 +42,9 @@ include '../includes/header.php';
 <td><?= h($contact['vorname']) ?></td>
 
 <td>
+<a href="mailto:<?= h(contact_email($contact, $config)) ?>">
 <?= h(contact_email($contact, $config)) ?>
+</a>
 <?php if (!empty($contact['email_override'])): ?>
 <span class="badge bg-secondary ms-1">manuell</span>
 <?php endif; ?>
