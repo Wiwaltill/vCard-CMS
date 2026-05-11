@@ -126,6 +126,12 @@ function get_config(): array
         'admin_user' => 'admin',
         'admin_password_hash' => password_hash('admin123', PASSWORD_DEFAULT),
         'installed' => false,
+        'language' => 'de',
+        'theme' => 'classic',
+        'darkmode_default' => false,
+        'pwa_enabled' => true,
+        'api_enabled' => true,
+        'api_token' => '',
         'data_types' => [
             [
                 'key' => 'phone',
@@ -615,4 +621,163 @@ function current_url(): string
 {
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     return $scheme . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+}
+
+// ---- v8.6 Erweiterungen: i18n, Themes, API, CSV, Backup, QR/PWA ----
+function app_lang(?array $config = null): string
+{
+    $config = $config ?: get_config();
+    $allowed = ['de', 'en'];
+
+    if (isset($_GET['lang']) && in_array($_GET['lang'], $allowed, true)) {
+        if (!headers_sent()) {
+            setcookie('vcard_lang', $_GET['lang'], time() + 60 * 60 * 24 * 365, '/', '', !empty($_SERVER['HTTPS']), true);
+        }
+        return $_GET['lang'];
+    }
+
+    $lang = $config['language'] ?? ($_COOKIE['vcard_lang'] ?? 'de');
+    return in_array($lang, $allowed, true) ? $lang : 'de';
+}
+
+function t(string $key, ?array $config = null): string
+{
+    static $dict = [
+        'de' => [
+            'save_contact' => 'Kontakt speichern', 'show_qr' => 'QR-Code anzeigen', 'qr_code' => 'QR-Code',
+            'download_png' => 'PNG herunterladen', 'download_svg' => 'SVG herunterladen', 'install_app' => 'Zum Homescreen hinzufügen',
+            'imprint' => 'Impressum', 'privacy' => 'Datenschutz', 'contact_not_found' => 'Kontakt nicht gefunden',
+            'contact_not_found_text' => 'Der gesuchte Kontakt konnte nicht gefunden werden.', 'write_us' => 'Schreiben Sie uns'
+        ],
+        'en' => [
+            'save_contact' => 'Save contact', 'show_qr' => 'Show QR code', 'qr_code' => 'QR code',
+            'download_png' => 'Download PNG', 'download_svg' => 'Download SVG', 'install_app' => 'Add to home screen',
+            'imprint' => 'Legal notice', 'privacy' => 'Privacy', 'contact_not_found' => 'Contact not found',
+            'contact_not_found_text' => 'The requested contact could not be found.', 'write_us' => 'Contact us'
+        ]
+    ];
+    $lang = app_lang($config);
+    return $dict[$lang][$key] ?? $dict['de'][$key] ?? $key;
+}
+
+function theme_name(?array $config = null): string
+{
+    $config = $config ?: get_config();
+    $allowed = ['classic', 'minimal', 'glass'];
+    $theme = $config['theme'] ?? 'classic';
+    return in_array($theme, $allowed, true) ? $theme : 'classic';
+}
+
+function darkmode_default(?array $config = null): bool
+{
+    $config = $config ?: get_config();
+    return !empty($config['darkmode_default']);
+}
+
+function public_base_url(): string
+{
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    return $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+}
+
+function contact_url(array $contact): string
+{
+    return public_base_url() . '/' . rawurlencode($contact['id'] ?? '');
+}
+
+function api_token(array $config): string
+{
+    if (empty($config['api_token'])) {
+        $config['api_token'] = bin2hex(random_bytes(24));
+        save_json('config.json', $config);
+    }
+    return $config['api_token'];
+}
+
+function require_api_auth(array $config): void
+{
+    $token = $_SERVER['HTTP_X_API_TOKEN'] ?? ($_GET['token'] ?? '');
+    if (!hash_equals(api_token($config), (string)$token)) {
+        http_response_code(401);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['error' => 'unauthorized'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+}
+
+function csv_columns(array $config): array
+{
+    $cols = ['id','vorname','nachname','position','bild','email','email_override','telefon'];
+    foreach (data_types($config) as $type) {
+        $key = $type['key'] ?? '';
+        if ($key && !in_array($key, ['email','phone'], true) && !in_array($key, $cols, true)) $cols[] = $key;
+    }
+    return $cols;
+}
+
+function contact_to_csv_row(array $contact, array $config): array
+{
+    $row = [];
+    foreach (csv_columns($config) as $col) {
+        if ($col === 'telefon') $row[$col] = $contact['telefon'] ?? '';
+        elseif ($col === 'email') $row[$col] = $contact['email'] ?? contact_email($contact, $config);
+        elseif ($col === 'email_override') $row[$col] = !empty($contact['email_override']) ? '1' : '0';
+        elseif (array_key_exists($col, $contact)) $row[$col] = is_scalar($contact[$col]) ? (string)$contact[$col] : '';
+        else $row[$col] = $contact['fields'][$col] ?? '';
+    }
+    return $row;
+}
+
+function csv_row_to_contact(array $row, array $config, array $existing = []): array
+{
+    $contact = $existing;
+    foreach (['id','vorname','nachname','position','bild','email','telefon'] as $col) {
+        if (isset($row[$col])) $contact[$col] = trim((string)$row[$col]);
+    }
+    $contact['email_override'] = !empty($row['email_override']) && !in_array(strtolower((string)$row['email_override']), ['0','false','nein','no'], true);
+    if (empty($contact['id'])) $contact['id'] = make_contact_id($contact['vorname'] ?? '', $contact['nachname'] ?? '', load_json('contacts.json', []));
+    foreach (data_types($config) as $type) {
+        $key = $type['key'] ?? '';
+        if ($key && !in_array($key, ['email','phone'], true) && array_key_exists($key, $row)) {
+            if (!isset($contact['fields']) || !is_array($contact['fields'])) $contact['fields'] = [];
+            $contact['fields'][$key] = trim((string)$row[$key]);
+        }
+    }
+    return $contact;
+}
+
+function make_backup_zip(): string
+{
+    $dir = data_path('backups');
+    if (!is_dir($dir)) mkdir($dir, 0775, true);
+    $zipPath = $dir . '/backup-' . date('Ymd-His') . '.zip';
+    $zip = new ZipArchive();
+    if ($zip->open($zipPath, ZipArchive::CREATE) !== true) return '';
+    foreach (['config.json','contacts.json'] as $file) if (file_exists(data_path($file))) $zip->addFile(data_path($file), 'data/'.$file);
+    $uploads = realpath(__DIR__ . '/../uploads');
+    if ($uploads) {
+        $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($uploads, FilesystemIterator::SKIP_DOTS));
+        foreach ($it as $file) if ($file->isFile()) $zip->addFile($file->getPathname(), 'public/uploads/'.$file->getFilename());
+    }
+    $zip->close();
+    return $zipPath;
+}
+
+function restore_backup_zip(string $tmp): bool
+{
+    $zip = new ZipArchive();
+    if ($zip->open($tmp) !== true) return false;
+    $extractBase = sys_get_temp_dir() . '/vcard-restore-' . bin2hex(random_bytes(4));
+    mkdir($extractBase, 0775, true);
+    $zip->extractTo($extractBase);
+    $zip->close();
+    foreach (['config.json','contacts.json'] as $file) {
+        $src = $extractBase . '/data/' . $file;
+        if (is_file($src)) copy($src, data_path($file));
+    }
+    $uploadsSrc = $extractBase . '/public/uploads';
+    if (is_dir($uploadsSrc)) {
+        foreach (glob($uploadsSrc . '/*') ?: [] as $src) if (is_file($src)) copy($src, __DIR__ . '/../uploads/' . basename($src));
+    }
+    return true;
 }
