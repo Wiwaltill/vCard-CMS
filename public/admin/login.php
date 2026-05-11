@@ -37,12 +37,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    $error = 'Login fehlgeschlagen.';
+    $error = admin_t('login_failed', $config);
 }
 
 ?>
 <!DOCTYPE html>
-<html lang="de">
+<html lang="<?= h(admin_lang($config)) ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow,noarchive">
@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
 
-<title>Admin Login</title>
+<title><?= h(admin_t('login_title', $config)) ?></title>
 </head>
 
 <body class="bg-light">
@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 <?php endif; ?>
 
-<h1 class="h4 mb-4 text-center">Admin Login</h1>
+<h1 class="h4 mb-4 text-center"><?= h(admin_t('login_title', $config)) ?></h1>
 
 <?php if ($error): ?>
 <div class="alert alert-danger"><?= h($error) ?></div>
@@ -77,24 +77,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <form method="post">
 
 <div class="mb-3">
-<label class="form-label">Benutzername</label>
+<label class="form-label"><?= h(admin_t('username', $config)) ?></label>
 <input type="text" name="username" class="form-control" required autocomplete="username">
 </div>
 
 <div class="mb-3">
-<label class="form-label">Passwort</label>
+<label class="form-label"><?= h(admin_t('password', $config)) ?></label>
 <input type="password" name="password" class="form-control" required autocomplete="current-password">
 </div>
 
 <div class="form-check mb-3">
 <input class="form-check-input" type="checkbox" name="remember" id="remember">
 <label class="form-check-label" for="remember">
-Eingeloggt bleiben
+<?= h(admin_t('remember_login', $config)) ?>
 </label>
 </div>
 
 <button class="btn btn-primary w-100">
-Einloggen
+<?= h(admin_t('login', $config)) ?>
 </button>
 
 </form>
