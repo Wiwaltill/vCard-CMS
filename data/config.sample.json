@@ -61,6 +61,16 @@
       "builtin": false,
       "sort": 120,
       "vcard": "URL;TYPE=LinkedIn"
+    },
+    {
+      "key": "xing",
+      "label": "Xing",
+      "type": "social",
+      "platform": "xing",
+      "enabled": false,
+      "builtin": false,
+      "sort": 130,
+      "vcard": "URL;TYPE=Xing"
     }
   ]
 }

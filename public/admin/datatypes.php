@@ -143,6 +143,7 @@ Mehr Informationen zu möglichen vCard-Feldern und deren Bedeutung findest du au
 <option value="tiktok" <?= ($type['platform'] ?? '') === 'tiktok' ? 'selected' : '' ?>>TikTok</option>
 <option value="x" <?= ($type['platform'] ?? '') === 'x' ? 'selected' : '' ?>>X</option>
 <option value="youtube" <?= ($type['platform'] ?? '') === 'youtube' ? 'selected' : '' ?>>YouTube</option>
+<option value="xing" <?= ($type['platform'] ?? '') === 'xing' ? 'selected' : '' ?>>Xing</option>
 </select>
 </td>
 
@@ -212,6 +213,7 @@ Die Reihenfolge wird über die Sortierung bestimmt. Systemfelder können nicht g
 <option value="tiktok">TikTok</option>
 <option value="x">X</option>
 <option value="youtube">YouTube</option>
+<option value="xing">Xing</option>
 </select>
 <div class="form-text">
 Bei Social Media reicht im Kontaktformular später der Username. Beispiel: <code>max.mustermann</code>

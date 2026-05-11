@@ -496,6 +496,7 @@ Datentypen können als **Social Media** angelegt werden. Unterstützte Plattform
 - TikTok
 - X
 - YouTube
+- Xing
 
 Im Kontaktformular reicht dann der Username. Das System erzeugt daraus automatisch die passende Profil-URL.
 
@@ -515,3 +516,18 @@ Alternativ kann auch direkt eine vollständige URL eingetragen werden.
 URL- und Social-Media-Datentypen öffnen auf der Kontaktseite automatisch in einem neuen Tab.
 
 Für Social-Media-Datentypen kann im Kontaktformular entweder ein Username oder eine vollständige URL eingetragen werden. In der Kontaktseite und in der vCard wird daraus immer eine vollständige URL erzeugt.
+
+
+### Xing
+
+Für Xing kann einfach der Profilname eingetragen werden:
+
+```text
+max_mustermann
+```
+
+Das System erzeugt daraus automatisch:
+
+```text
+https://www.xing.com/profile/max_mustermann
+```

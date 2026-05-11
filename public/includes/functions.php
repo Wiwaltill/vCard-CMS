@@ -392,7 +392,8 @@ function data_type_href(array $type, string $value): string
             'linkedin' => 'https://www.linkedin.com/in/',
             'tiktok' => 'https://www.tiktok.com/@',
             'x' => 'https://x.com/',
-            'youtube' => 'https://www.youtube.com/@'
+            'youtube' => 'https://www.youtube.com/@',
+            'xing' => 'https://www.xing.com/profile/'
         ];
 
         if (isset($bases[$platform])) {
@@ -435,7 +436,8 @@ function data_type_svg_icon(array $type): string
             'linkedin' => 'bi-linkedin',
             'tiktok' => 'bi-tiktok',
             'x' => 'bi-twitter-x',
-            'youtube' => 'bi-youtube'
+            'youtube' => 'bi-youtube',
+            'xing' => 'bi-building'
         ];
 
         $icon = $icons[$platform] ?? 'bi-share';
