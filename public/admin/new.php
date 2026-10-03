@@ -10,38 +10,9 @@ $types = data_types($config);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    $vorname = trim($_POST['vorname']);
-    $nachname = trim($_POST['nachname']);
-    $id = make_contact_id($vorname, $nachname, $contacts);
-
-    $emailOverride = isset($_POST['email_override']);
-    $autoEmail = generate_email($vorname, $nachname, $config);
-    $email = $emailOverride ? trim($_POST['email']) : $autoEmail;
-
-    $bild = upload_image('bild', 'mitarbeiter-' . $id);
-
-    $contact = [
-        'id' => $id,
-        'vorname' => $vorname,
-        'nachname' => $nachname,
-        'telefon' => '',
-        'email' => $email,
-        'email_override' => $emailOverride,
-        'position' => $_POST['position'],
-        'bild' => $bild,
-        'fields' => []
-    ];
-
-    foreach ($types as $type) {
-        $key = $type['key'];
-
-        if ($key === 'email') {
-            continue;
-        }
-
-        $value = trim($_POST[data_type_input_name($key)] ?? '');
-        set_data_type_value($contact, $type, $value);
-    }
+    $contact = contact_form_values($_POST, $config);
+    $contact['id'] = make_contact_id($contact['vorname'], $contact['nachname'], $contacts);
+    $contact['bild'] = upload_image('bild', 'mitarbeiter-' . $contact['id']);
 
     $contacts[] = $contact;
     save_contacts($contacts);
@@ -56,7 +27,12 @@ include __DIR__ . '/../includes/header.php';
 
 <h1 class="mb-4"><?= h(admin_t('new_contact', $config)) ?></h1>
 
-<form method="post" enctype="multipart/form-data"><?= csrf_field() ?>
+<div class="row g-4">
+<div class="col-lg-7">
+<form method="post" enctype="multipart/form-data" data-contact-editor
+    data-email-domain="<?= h($config['email_domain']) ?>" data-email-pattern="<?= h($config['email_pattern']) ?>"
+    data-preview-loading="<?= h(admin_t('preview_loading', $config)) ?>" data-preview-error="<?= h(admin_t('preview_error', $config)) ?>"><?= csrf_field() ?>
+    <input type="hidden" name="preview_id" value="<?= h($current['id'] ?? '') ?>">
 
     <div class="row">
         <div class="col-md-6 mb-3">
@@ -127,91 +103,8 @@ include __DIR__ . '/../includes/header.php';
     <a href="/admin" class="btn btn-secondary"><?= h(admin_t('cancel', $config)) ?></a>
 
 </form>
-
-<script>
-    const overrideCheckbox = document.getElementById('email_override');
-    const emailInput = document.getElementById('email');
-    const firstNameInput = document.getElementById('vorname');
-    const lastNameInput = document.getElementById('nachname');
-
-    const emailDomain = <?= json_encode($config['email_domain']) ?>;
-    const emailPattern = <?= json_encode($config['email_pattern']) ?>;
-
-    function normalizeEmailPart(value) {
-        return value
-            .trim()
-            .toLowerCase()
-            .replaceAll('ä', 'ae')
-            .replaceAll('ö', 'oe')
-            .replaceAll('ü', 'ue')
-            .replaceAll('ß', 'ss')
-            .replace(/[^a-z0-9]+/g, '');
-    }
-
-    function generateEmailPreview() {
-        const first = normalizeEmailPart(firstNameInput.value);
-        const last = normalizeEmailPart(lastNameInput.value);
-
-        if (!first && !last) {
-            return '';
-        }
-
-        let local = '';
-
-        switch (emailPattern) {
-            case 'vorname':
-                local = first;
-                break;
-            case 'nachname':
-                local = last;
-                break;
-            case 'initialen':
-                local = first.substring(0, 1) + last.substring(0, 1);
-                break;
-            case 'v.nachname':
-                local = first.substring(0, 1) + '.' + last;
-                break;
-            case 'vorname_nachname':
-                local = first + '_' + last;
-                break;
-            case 'vornamenachname':
-                local = first + last;
-                break;
-            case 'vorname.nachname':
-            default:
-                local = first + '.' + last;
-                break;
-        }
-
-        local = local.replace(/^\.+|\.+$/g, '');
-
-        if (!local) {
-            return '';
-        }
-
-        return local + '@' + emailDomain.replace(/^@/, '');
-    }
-
-    function updateEmailPreview() {
-        if (!overrideCheckbox.checked) {
-            emailInput.value = generateEmailPreview();
-        }
-    }
-
-    function toggleEmailField() {
-        emailInput.disabled = !overrideCheckbox.checked;
-
-        if (!overrideCheckbox.checked) {
-            updateEmailPreview();
-        }
-    }
-
-    overrideCheckbox.addEventListener('change', toggleEmailField);
-    firstNameInput.addEventListener('input', updateEmailPreview);
-    lastNameInput.addEventListener('input', updateEmailPreview);
-
-    toggleEmailField();
-    updateEmailPreview();
-</script>
+</div>
+<?php include __DIR__ . '/../includes/editor-preview.php'; ?>
+</div>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

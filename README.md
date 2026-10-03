@@ -14,11 +14,12 @@ Ein kleines PHP-CMS mit Adminbereich, Kontaktkarten, vCard-Downloads und QR-Code
 | Bereich | Möglichkeiten |
 | --- | --- |
 | Kontaktkarten | Responsive Karten, Profilbilder, Position und konfigurierbare Kontaktfelder |
-| Teilen | Download als `.vcf`, QR-Code-Anzeige und QR-Downloads als PNG oder SVG |
+| Teilen | Download als `.vcf`, lokal erzeugte QR-Codes als PNG oder SVG |
 | Branding | Firmenname, Logo, Akzentfarbe und Links zu Impressum und Datenschutz |
 | Darstellung | Themes **Classic**, **Minimal** und **Glass**; heller, dunkler oder systemabhängiger Modus |
 | Sprache | Deutsch und Englisch, automatische Browser-Erkennung und Sprachwahl auf Kontaktkarten |
-| Verwaltung | Kontakte anlegen und bearbeiten, eigene Datentypen und deren Reihenfolge konfigurieren |
+| Verwaltung | Kontakte suchen, nach Position filtern, seitenweise anzeigen und mit Live-Vorschau bearbeiten |
+| Bilder | Neue Profilbilder und Logos automatisch verkleinern, ausrichten und als WebP ohne Metadaten speichern |
 | Datenaustausch | CSV-Import und -Export sowie REST API zum Lesen und Schreiben von Kontakten |
 | Datensicherung | ZIP-Backups mit Konfiguration, Kontakten und Uploads; Download und Wiederherstellung im Adminbereich |
 | PWA | Web-App-Manifest und Service Worker zum Hinzufügen auf den Homescreen; Unterstützung abhängig von Browser und Gerät |
@@ -29,11 +30,11 @@ Ein kleines PHP-CMS mit Adminbereich, Kontaktkarten, vCard-Downloads und QR-Code
 
 - PHP **8.0 oder neuer**; für den Betrieb eine gepflegte PHP-Version einsetzen.
 - Apache mit `mod_rewrite` und erlaubten `.htaccess`-Regeln, beispielsweise `AllowOverride All` für `public/`.
-- PHP-Erweiterungen **fileinfo** für Bildprüfungen und **ZipArchive** für Backup und Restore.
+- PHP-Erweiterungen **fileinfo**, **gd** mit WebP-Unterstützung, **exif**, **mbstring** und **ZipArchive** für Bildverarbeitung, Suche, QR-Codes und Backups.
 - Schreibzugriff des PHP-Prozesses auf `data/` und `public/uploads/`.
 - HTTPS für den produktiven Betrieb und die Service-Worker-Funktion.
 
-Es sind weder eine Datenbank noch ein Node.js-Build oder eine Composer-Installation erforderlich. Für serverseitige QR-Downloads wird ausgehender HTTPS-Zugriff über `file_get_contents` benötigt (`allow_url_fopen`); bei einem Fehler erfolgt eine Weiterleitung zum QR-Dienst.
+Es sind weder eine Datenbank noch ein Node.js-Build oder eine Composer-Installation erforderlich. Die Bibliotheken für die lokale QR-Erzeugung sind mit ihren Lizenzen im Repository enthalten.
 
 ### 1. Projekt bereitstellen
 
@@ -85,13 +86,17 @@ Die Anwendung verwendet absolute URL-Pfade wie `/admin` und `/uploads`. Für die
 3. Unter `/admin/settings` Branding, Sprache, Theme und Darstellung einstellen.
 4. Die Kontaktkarte über ihre ID teilen oder den QR-Code herunterladen.
 
+Die Kontaktverwaltung bietet Suche, Positionsfilter und 20, 50 oder 100 Einträge pro Seite. Beim Anlegen und Bearbeiten zeigt die Live-Vorschau die Karte samt ausgewähltem Foto; gespeichert wird erst beim Absenden. Bestehende Kontakt-IDs bleiben beim Umbenennen erhalten, sodass Links und bereits gedruckte QR-Codes weiterhin funktionieren. Links verwenden automatisch die Domain des aktuellen Aufrufs.
+
+Neue Profilbilder werden auf maximal 768 Pixel, Logos auf maximal 1200 Pixel Kantenlänge begrenzt. JPEG-Fotos werden anhand ihrer EXIF-Ausrichtung gedreht; die gespeicherten WebP-Dateien enthalten keine ursprünglichen EXIF-Metadaten. Bereits gespeicherte Bilder bleiben erhalten.
+
 | URL | Zweck |
 | --- | --- |
 | `/admin` | Kontaktverwaltung |
 | `/{id}` | Öffentliche Kontaktkarte |
 | `/{id}/vcard` | Kontakt als `.vcf` herunterladen |
-| `/qr/{id}/png` | QR-Code als PNG herunterladen |
-| `/qr/{id}/svg` | QR-Code als SVG herunterladen |
+| `/qr/{id}/png` | QR-Code als PNG anzeigen; mit `?download=1` herunterladen |
+| `/qr/{id}/svg` | QR-Code als SVG anzeigen; mit `?download=1` herunterladen |
 | `/admin/import_export` | CSV-Import und -Export |
 | `/admin/backup` | ZIP-Backups verwalten |
 | `/admin/api` | API aktivieren und Token neu erzeugen |
@@ -162,15 +167,16 @@ Beim Update werden alte Login-Cookies nicht mehr akzeptiert; erneut anmelden. `d
 
 Die Tests ersetzen keine Prüfung der konkreten Serverkonfiguration. HTTPS, ein DocumentRoot auf `public/` und aktivierte `.htaccess`-Regeln bleiben Voraussetzungen für den produktiven Betrieb.
 
-Bootstrap und Bootstrap Icons werden über jsDelivr geladen. QR-Codes werden durch `api.qrserver.com` erzeugt; dabei wird die URL der Kontaktkarte an diesen Dienst übertragen. Für einen Betrieb ohne diese externen Abhängigkeiten Assets lokal ausliefern und QR-Codes lokal erzeugen.
+Bootstrap und Bootstrap Icons werden über jsDelivr geladen. QR-Codes werden vollständig auf dem eigenen Server erzeugt; Kontakt-URLs werden dabei nicht an einen QR-Dienst übertragen. Für einen Betrieb ohne externe Asset-Abhängigkeiten auch Bootstrap und Icons lokal ausliefern.
 
 ## Tests
 
-Mit einer lokalen PHP-Laufzeit einschließlich `fileinfo` und `ZipArchive`:
+Mit einer lokalen PHP-Laufzeit einschließlich der oben genannten Erweiterungen:
 
 ```bash
 find public tests -name '*.php' -print0 | xargs -0 -n1 php -l
 php tests/security.php
+php tests/features.php
 python3 tests/http_security.py
 ```
 
@@ -180,7 +186,7 @@ Die Tests verwenden temporäre Verzeichnisse und verändern keine bestehenden Ko
 node tests/service_worker.mjs
 ```
 
-GitHub Actions prüft Syntax und Sicherheitsfälle mit PHP 8.0 und 8.4.
+Die Funktionstests prüfen Suche, Pagination, Domain-Erkennung, Bildgröße, Transparenz, alle acht EXIF-Ausrichtungen und QR-Code-Rundläufe. GitHub Actions prüft Syntax, Funktionen und Sicherheitsfälle mit PHP 8.0 und 8.4.
 
 ## Mitwirken & Lizenz
 

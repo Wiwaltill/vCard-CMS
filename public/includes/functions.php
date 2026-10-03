@@ -204,6 +204,47 @@ function save_contacts(array $contacts): void
     save_json('contacts.json', array_values($contacts));
 }
 
+function contact_form_values(array $input, array $config, array $existing = []): array
+{
+    $contact = array_replace(['vorname' => '', 'nachname' => '', 'position' => '', 'bild' => '', 'fields' => []], $existing);
+    foreach (['vorname', 'nachname', 'position'] as $key) {
+        if (isset($input[$key]) && !is_string($input[$key])) throw new InvalidArgumentException('Invalid contact field.');
+        $contact[$key] = trim($input[$key] ?? '');
+    }
+    $contact['email_override'] = isset($input['email_override']);
+    if (isset($input['email']) && !is_string($input['email'])) throw new InvalidArgumentException('Invalid email.');
+    $contact['email'] = $contact['email_override'] ? trim($input['email'] ?? '')
+        : generate_email($contact['vorname'], $contact['nachname'], $config);
+    foreach (data_types($config) as $type) {
+        if ($type['key'] === 'email') continue;
+        $value = $input[data_type_input_name($type['key'])] ?? '';
+        if (!is_string($value)) throw new InvalidArgumentException('Invalid contact field.');
+        set_data_type_value($contact, $type, trim($value));
+    }
+    return $contact;
+}
+
+function contact_list_page(array $contacts, array $config, string $query = '', string $position = '', int $page = 1, int $perPage = 20): array
+{
+    $query = trim($query);
+    $matches = array_values(array_filter($contacts, static function (array $contact) use ($config, $query, $position): bool {
+        if ($position !== '' && ($contact['position'] ?? '') !== $position) return false;
+        if ($query === '') return true;
+        $values = [$contact['id'] ?? '', $contact['vorname'] ?? '', $contact['nachname'] ?? '',
+            trim(($contact['vorname'] ?? '') . ' ' . ($contact['nachname'] ?? '')), $contact['position'] ?? '',
+            contact_email($contact, $config), $contact['telefon'] ?? ''];
+        foreach (data_types($config) as $type) $values[] = data_type_value($contact, $type, $config);
+        $haystack = implode(' ', $values);
+        return mb_stripos($haystack, $query, 0, 'UTF-8') !== false;
+    }));
+    $perPage = max(1, min(100, $perPage));
+    $total = count($matches);
+    $pages = max(1, (int)ceil($total / $perPage));
+    $page = max(1, min($pages, $page));
+    return ['contacts' => array_slice($matches, ($page - 1) * $perPage, $perPage), 'total' => $total,
+        'page' => $page, 'pages' => $pages, 'per_page' => $perPage];
+}
+
 function make_contact_id(string $vorname, string $nachname, array $contacts, ?string $currentId = null): string
 {
     $base = strtolower(substr(trim($vorname), 0, 1) . substr(trim($nachname), 0, 1));
@@ -542,6 +583,65 @@ function valid_image_file(string $path, string $extension): bool
         && $size[0] <= 8192 && $size[1] <= 8192 && $size[0] * $size[1] <= 25000000;
 }
 
+function image_memory_available(int $bytes): bool
+{
+    $limit = trim(ini_get('memory_limit'));
+    if ($limit === '-1') return true;
+    $value = (int)$limit;
+    $unit = strtolower(substr($limit, -1));
+    if ($unit === 'g') $value *= 1024 * 1024 * 1024;
+    elseif ($unit === 'm') $value *= 1024 * 1024;
+    elseif ($unit === 'k') $value *= 1024;
+    return memory_get_usage(true) + $bytes + 8 * 1024 * 1024 < $value;
+}
+
+function optimize_image_file(string $source, string $target, int $maxDimension = 768): void
+{
+    $dimensions = getimagesize($source);
+    if (!$dimensions || !image_memory_available($dimensions[0] * $dimensions[1] * 10)) {
+        throw new RuntimeException('Image is too large for this server. Please reduce its dimensions.');
+    }
+    $orientation = 1;
+    if ($dimensions[2] === IMAGETYPE_JPEG) {
+        $exif = @exif_read_data($source);
+        $orientation = is_array($exif) ? (int)($exif['Orientation'] ?? 1) : 1;
+    }
+    $image = @imagecreatefromstring(file_get_contents($source));
+    if (!$image) throw new RuntimeException('Cannot decode image.');
+    try {
+        if (in_array($orientation, [2, 5, 7], true)) imageflip($image, IMG_FLIP_HORIZONTAL);
+        elseif ($orientation === 4) imageflip($image, IMG_FLIP_VERTICAL);
+        $angles = [3 => 180, 5 => 90, 6 => -90, 7 => -90, 8 => 90];
+        if (isset($angles[$orientation])) {
+            $transparent = imagecolorallocatealpha($image, 0, 0, 0, 127);
+            $rotated = imagerotate($image, $angles[$orientation], $transparent);
+            if (!$rotated) throw new RuntimeException('Cannot orient image.');
+            imagedestroy($image);
+            $image = $rotated;
+        }
+        $width = imagesx($image);
+        $height = imagesy($image);
+        $ratio = min(1, $maxDimension / max($width, $height));
+        $outWidth = max(1, (int)round($width * $ratio));
+        $outHeight = max(1, (int)round($height * $ratio));
+        $output = imagecreatetruecolor($outWidth, $outHeight);
+        if (!$output) throw new RuntimeException('Cannot resize image.');
+        try {
+            imagealphablending($output, false);
+            imagesavealpha($output, true);
+            imagefill($output, 0, 0, imagecolorallocatealpha($output, 0, 0, 0, 127));
+            if (!imagecopyresampled($output, $image, 0, 0, 0, 0, $outWidth, $outHeight, $width, $height)
+                || !imagewebp($output, $target, 82) || !is_file($target) || filesize($target) === 0) {
+                throw new RuntimeException('Cannot save optimized image.');
+            }
+        } finally {
+            imagedestroy($output);
+        }
+    } finally {
+        imagedestroy($image);
+    }
+}
+
 function upload_image(string $field, string $prefix): string
 {
     if (!isset($_FILES[$field]) || ($_FILES[$field]['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) return '';
@@ -551,9 +651,14 @@ function upload_image(string $field, string $prefix): string
         http_response_code(422);
         exit('Invalid image. Use PNG, JPEG or WebP, at most 5 MB and 8192 pixels per side.');
     }
-    $filename = preg_replace('/[^a-z0-9_-]/i', '', $prefix) . '-' . bin2hex(random_bytes(16)) . '.' . $extension;
-    if (!move_uploaded_file($file['tmp_name'], __DIR__ . '/../uploads/' . $filename)) {
-        throw new RuntimeException('Cannot save upload.');
+    $filename = preg_replace('/[^a-z0-9_-]/i', '', $prefix) . '-' . bin2hex(random_bytes(16)) . '.webp';
+    $target = __DIR__ . '/../uploads/' . $filename;
+    try {
+        optimize_image_file($file['tmp_name'], $target, $field === 'company_logo' ? 1200 : 768);
+    } catch (Throwable $error) {
+        if (is_file($target)) unlink($target);
+        http_response_code(422);
+        exit('Cannot process image. Please try a smaller PNG, JPEG or WebP image.');
     }
     return '/uploads/' . $filename;
 }
@@ -822,6 +927,7 @@ function admin_t(string $key, ?array $config = null): string
 {
     static $dict = [
         'de' => [
+            'search'=>'Suchen','search_placeholder'=>'Name, Position, E-Mail oder Kontaktfeld','all_positions'=>'Alle Positionen','per_page'=>'Pro Seite','reset_filters'=>'Filter zurücksetzen','no_contacts_found'=>'Keine passenden Kontakte gefunden.','pagination'=>'Kontaktseiten','page'=>'Seite','first_page'=>'Erste Seite','previous_page'=>'Vorherige Seite','next_page'=>'Nächste Seite','last_page'=>'Letzte Seite','live_preview'=>'Live-Vorschau','draft'=>'Entwurf','preview_help'=>'Änderungen erscheinen hier vor dem Speichern.','preview_loading'=>'Vorschau wird aktualisiert …','preview_error'=>'Vorschau nicht verfügbar. Bitte neu laden und erneut anmelden.','stable_link'=>'Dieser Kontaktlink bleibt auch bei Namensänderungen erhalten:','preview_requires_js'=>'Für die Live-Vorschau bitte JavaScript aktivieren.',
             'contacts'=>'Kontakte','data_types'=>'Datentypen','settings'=>'Einstellungen','logout'=>'Logout','backup'=>'Backup','csv'=>'CSV','api'=>'API',
             'appearance_language'=>'Darstellung & Sprache','language'=>'Sprache','language_auto'=>'Automatisch nach Browser','german'=>'Deutsch','english'=>'English','theme'=>'Theme','color_mode'=>'Farbmodus','auto'=>'Auto','light'=>'Hell','dark'=>'Dunkel','pwa_enable'=>'PWA aktivieren','save'=>'Speichern',
             'company_data'=>'Firmendaten','links'=>'Links','email_auto'=>'E-Mail Automatik','user_admin'=>'Nutzerverwaltung','saved'=>'Einstellungen gespeichert.',
@@ -834,6 +940,7 @@ function admin_t(string $key, ?array $config = null): string
             'text'=>'Text','website'=>'Website','social_media'=>'Social Media','regen_token'=>'Token neu erzeugen','login_title'=>'Admin Login','first_name_pattern'=>'Vorname','last_name_pattern'=>'Nachname','initials_pattern'=>'Initialen','first_last_pattern'=>'Vorname.Nachname','initial_last_pattern'=>'Initial.Nachname','first_last_underscore_pattern'=>'Vorname_Nachname','firstlast_pattern'=>'VornameNachname','key'=>'Key','vcard_field'=>'vCard-Feld','csv_import_export'=>'CSV Import/Export','export_contacts_csv'=>'Kontakte als CSV exportieren','import_csv'=>'CSV importieren','csv_import_help'=>'Trennzeichen: Semikolon. Vorhandene Kontakte werden über die Spalte id aktualisiert.','start_import'=>'Import starten'
         ],
         'en' => [
+            'search'=>'Search','search_placeholder'=>'Name, position, email or contact field','all_positions'=>'All positions','per_page'=>'Per page','reset_filters'=>'Reset filters','no_contacts_found'=>'No matching contacts found.','pagination'=>'Contact pages','page'=>'Page','first_page'=>'First page','previous_page'=>'Previous page','next_page'=>'Next page','last_page'=>'Last page','live_preview'=>'Live preview','draft'=>'Draft','preview_help'=>'See your changes here before saving.','preview_loading'=>'Updating preview …','preview_error'=>'Preview unavailable. Please reload and sign in again.','stable_link'=>'This contact link stays the same when the name changes:','preview_requires_js'=>'Enable JavaScript to see the live preview.',
             'contacts'=>'Contacts','data_types'=>'Data types','settings'=>'Settings','logout'=>'Logout','backup'=>'Backup','csv'=>'CSV','api'=>'API',
             'appearance_language'=>'Appearance & language','language'=>'Language','language_auto'=>'Automatic based on browser','german'=>'German','english'=>'English','theme'=>'Theme','color_mode'=>'Color mode','auto'=>'Auto','light'=>'Light','dark'=>'Dark','pwa_enable'=>'Enable PWA','save'=>'Save',
             'company_data'=>'Company data','links'=>'Links','email_auto'=>'Email automation','user_admin'=>'User administration','saved'=>'Settings saved.',

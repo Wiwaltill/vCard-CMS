@@ -1,30 +1,28 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/qr-code.php';
 require_installed();
-$contacts = load_json('contacts.json', []);
 $id = $_GET['id'] ?? '';
-$format = ($_GET['format'] ?? 'png') === 'svg' ? 'svg' : 'png';
+$format = $_GET['format'] ?? 'png';
+if (!is_string($id) || !preg_match('/^[a-z0-9]{2,20}$/D', $id) || !in_array($format, ['png', 'svg'], true)) {
+    http_response_code(400);
+    exit('Invalid QR request.');
+}
 $contact = null;
-foreach ($contacts as $c) if (($c['id'] ?? '') === $id) {
-    $contact = $c;
+foreach (load_json('contacts.json', []) as $candidate) if (($candidate['id'] ?? '') === $id) {
+    $contact = $candidate;
     break;
 }
 if (!$contact) {
     http_response_code(404);
-    exit('not found');
+    exit('Not found.');
 }
-$url = contact_url($contact);
-$remote = 'https://api.qrserver.com/v1/create-qr-code/?size=800x800&format=' . $format . '&data=' . urlencode($url);
-$data = @file_get_contents($remote);
-if ($data === false) {
-    header('Location: ' . $remote);
-    exit;
-}
-$filename = 'qr-' . preg_replace('/[^a-z0-9_-]/i', '', $id) . '.' . $format;
-header('Content-Type: application/octet-stream');
-header('Content-Disposition: attachment; filename="' . $filename . '"');
-header('Content-Transfer-Encoding: binary');
+$matrix = qr_matrix(contact_url($contact));
+$data = $format === 'svg' ? qr_svg($matrix) : qr_png($matrix);
+header('Content-Type: ' . ($format === 'svg' ? 'image/svg+xml' : 'image/png'));
+header('Content-Disposition: ' . (isset($_GET['download']) ? 'attachment' : 'inline') . '; filename="qr-' . $id . '.' . $format . '"');
 header('X-Content-Type-Options: nosniff');
-header('Cache-Control: private, max-age=0, must-revalidate');
+header("Content-Security-Policy: default-src 'none'; sandbox");
+header('Cache-Control: private, no-cache');
 header('Content-Length: ' . strlen($data));
 echo $data;

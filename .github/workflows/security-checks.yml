@@ -11,12 +11,14 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: fileinfo, zip
+          extensions: fileinfo, zip, gd, exif, mbstring
           coverage: none
       - name: Check PHP syntax
         run: find public tests -name '*.php' -print0 | xargs -0 -n1 php -l
       - name: Test authentication, uploads and backups
         run: php tests/security.php
+      - name: Test search, image optimization and local QR codes
+        run: php tests/features.php
       - name: Test HTTP flows and concurrent writes
         run: python3 tests/http_security.py
       - name: Test Service Worker cache isolation

@@ -28,50 +28,24 @@ $current = array_replace(['vorname' => '', 'nachname' => '', 'position' => '', '
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    $vorname = trim($_POST['vorname']);
-    $nachname = trim($_POST['nachname']);
-
-    $newId = make_contact_id($vorname, $nachname, $contacts, $id);
-
-    $emailOverride = isset($_POST['email_override']);
-    $autoEmail = generate_email($vorname, $nachname, $config);
-    $email = $emailOverride ? trim($_POST['email']) : $autoEmail;
+    $contact = contact_form_values($_POST, $config, $contacts[$currentKey]);
 
     if (isset($_POST['delete_bild']) && !empty($contacts[$currentKey]['bild'])) {
         delete_public_file($contacts[$currentKey]['bild']);
-        $contacts[$currentKey]['bild'] = '';
+        $contact['bild'] = '';
     }
 
-    $bild = upload_image('bild', 'mitarbeiter-' . $newId);
+    $bild = upload_image('bild', 'mitarbeiter-' . $id);
 
     if ($bild !== '') {
         if (!empty($contacts[$currentKey]['bild'])) {
             delete_public_file($contacts[$currentKey]['bild']);
         }
-        $contacts[$currentKey]['bild'] = $bild;
+        $contact['bild'] = $bild;
     }
 
-    $contacts[$currentKey]['id'] = $newId;
-    $contacts[$currentKey]['vorname'] = $vorname;
-    $contacts[$currentKey]['nachname'] = $nachname;
-    $contacts[$currentKey]['email'] = $email;
-    $contacts[$currentKey]['email_override'] = $emailOverride;
-    $contacts[$currentKey]['position'] = $_POST['position'];
-
-    if (!isset($contacts[$currentKey]['fields']) || !is_array($contacts[$currentKey]['fields'])) {
-        $contacts[$currentKey]['fields'] = [];
-    }
-
-    foreach ($types as $type) {
-        $key = $type['key'];
-
-        if ($key === 'email') {
-            continue;
-        }
-
-        $value = trim($_POST[data_type_input_name($key)] ?? '');
-        set_data_type_value($contacts[$currentKey], $type, $value);
-    }
+    $contact['id'] = $id;
+    $contacts[$currentKey] = $contact;
 
     save_contacts($contacts);
 
@@ -89,7 +63,12 @@ include __DIR__ . '/../includes/header.php';
 
 <h1 class="mb-4"><?= h(admin_t('edit_contact', $config)) ?></h1>
 
-<form method="post" enctype="multipart/form-data"><?= csrf_field() ?>
+<div class="row g-4">
+<div class="col-lg-7">
+<form method="post" enctype="multipart/form-data" data-contact-editor
+    data-email-domain="<?= h($config['email_domain']) ?>" data-email-pattern="<?= h($config['email_pattern']) ?>"
+    data-preview-loading="<?= h(admin_t('preview_loading', $config)) ?>" data-preview-error="<?= h(admin_t('preview_error', $config)) ?>"><?= csrf_field() ?>
+    <input type="hidden" name="preview_id" value="<?= h($current['id'] ?? '') ?>">
 
     <div class="row">
         <div class="col-md-6 mb-3">
@@ -127,7 +106,7 @@ include __DIR__ . '/../includes/header.php';
         <label class="form-label"><?= h(admin_t('email', $config)) ?></label>
         <input type="email" name="email" id="email" value="<?= h($currentEmail) ?>" class="form-control" <?= $emailOverride ? '' : 'disabled' ?>>
         <div class="form-text">
-            <?= h(admin_t('automatic', $config)) ?>: <?= h($autoEmail) ?>
+            <?= h(admin_t('automatic', $config)) ?>: <span id="automaticEmailHint"><?= h($autoEmail) ?></span>
         </div>
     </div>
 
@@ -171,27 +150,8 @@ include __DIR__ . '/../includes/header.php';
     <a href="/admin" class="btn btn-secondary"><?= h(admin_t('cancel', $config)) ?></a>
 
 </form>
-
-<script>
-    const overrideCheckbox = document.getElementById('email_override');
-    const emailInput = document.getElementById('email');
-    const autoEmail = <?= json_encode($autoEmail) ?>;
-    const savedEmail = <?= json_encode($currentEmail) ?>;
-
-    function toggleEmailField() {
-        emailInput.disabled = !overrideCheckbox.checked;
-
-        if (overrideCheckbox.checked) {
-            if (!emailInput.value) {
-                emailInput.value = savedEmail || autoEmail;
-            }
-        } else {
-            emailInput.value = autoEmail;
-        }
-    }
-
-    overrideCheckbox.addEventListener('change', toggleEmailField);
-    toggleEmailField();
-</script>
+</div>
+<?php include __DIR__ . '/../includes/editor-preview.php'; ?>
+</div>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>
