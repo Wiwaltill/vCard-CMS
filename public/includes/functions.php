@@ -651,14 +651,21 @@ function upload_image(string $field, string $prefix): string
         http_response_code(422);
         exit('Invalid image. Use PNG, JPEG or WebP, at most 5 MB and 8192 pixels per side.');
     }
-    $filename = preg_replace('/[^a-z0-9_-]/i', '', $prefix) . '-' . bin2hex(random_bytes(16)) . '.webp';
+    $basename = preg_replace('/[^a-z0-9_-]/i', '', $prefix) . '-' . bin2hex(random_bytes(16));
+    $filename = $basename . '.webp';
     $target = __DIR__ . '/../uploads/' . $filename;
     try {
         optimize_image_file($file['tmp_name'], $target, $field === 'company_logo' ? 1200 : 768);
     } catch (Throwable $error) {
         if (is_file($target)) unlink($target);
-        http_response_code(422);
-        exit('Cannot process image. Please try a smaller PNG, JPEG or WebP image.');
+        // Optimization is optional: a validated upload must remain usable even
+        // when GD/WebP/EXIF support or enough decoding memory is unavailable.
+        $filename = $basename . '.' . $extension;
+        $target = __DIR__ . '/../uploads/' . $filename;
+        if (!move_uploaded_file($file['tmp_name'], $target)) {
+            http_response_code(500);
+            exit('Cannot save uploaded image.');
+        }
     }
     return '/uploads/' . $filename;
 }

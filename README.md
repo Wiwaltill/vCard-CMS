@@ -88,7 +88,7 @@ Die Anwendung verwendet absolute URL-Pfade wie `/admin` und `/uploads`. Für die
 
 Die Kontaktverwaltung bietet Suche, Positionsfilter und 20, 50 oder 100 Einträge pro Seite. Beim Anlegen und Bearbeiten zeigt die Live-Vorschau die Karte samt ausgewähltem Foto; gespeichert wird erst beim Absenden. Bestehende Kontakt-IDs bleiben beim Umbenennen erhalten, sodass Links und bereits gedruckte QR-Codes weiterhin funktionieren. Links verwenden automatisch die Domain des aktuellen Aufrufs.
 
-Neue Profilbilder werden auf maximal 768 Pixel, Logos auf maximal 1200 Pixel Kantenlänge begrenzt. JPEG-Fotos werden anhand ihrer EXIF-Ausrichtung gedreht; die gespeicherten WebP-Dateien enthalten keine ursprünglichen EXIF-Metadaten. Bereits gespeicherte Bilder bleiben erhalten.
+Neue Profilbilder werden auf maximal 768 Pixel, Logos auf maximal 1200 Pixel Kantenlänge begrenzt. JPEG-Fotos werden anhand ihrer EXIF-Ausrichtung gedreht; die gespeicherten WebP-Dateien enthalten keine ursprünglichen EXIF-Metadaten. Kann der Server ein gültiges Bild wegen fehlender Bildfunktionen oder zu wenig Arbeitsspeicher nicht optimieren, wird es im Originalformat gespeichert; dabei bleiben auch ursprüngliche Metadaten erhalten. Bereits gespeicherte Bilder bleiben erhalten.
 
 | URL | Zweck |
 | --- | --- |
