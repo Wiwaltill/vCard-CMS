@@ -23,7 +23,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $companyName = trim($_POST['company_name'] ?? '');
     $companyColor = trim($_POST['company_color'] ?? '#0d6efd');
     $logoLink = trim($_POST['logo_link'] ?? '');
-    $githubUrl = trim($_POST['github_url'] ?? '');
     $homeRedirectUrl = trim($_POST['home_redirect_url'] ?? '');
     $contactEmail = trim($_POST['contact_email'] ?? '');
     $imprintUrl = trim($_POST['imprint_url'] ?? '');
@@ -67,7 +66,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $config['company_name'] = $companyName;
         $config['company_color'] = $companyColor;
         $config['logo_link'] = $logoLink;
-        $config['github_url'] = $githubUrl;
         $config['home_redirect_url'] = $homeRedirectUrl;
         $config['contact_email'] = $contactEmail;
         $config['imprint_url'] = $imprintUrl;
@@ -180,12 +178,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="card-body">
 
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">GitHub Link optional</label>
-                            <input type="url" name="github_url" class="form-control" value="<?= h($_POST['github_url'] ?? '') ?>">
-                        </div>
 
-                        <div class="col-md-6 mb-3">
+                        <div class="col-12 mb-3">
                             <label class="form-label">Startseiten-Weiterleitung</label>
                             <input type="url" name="home_redirect_url" class="form-control" value="<?= h($_POST['home_redirect_url'] ?? default_url_for_base_domain($baseDomain)) ?>">
                         </div>

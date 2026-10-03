@@ -11,7 +11,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $config['company_name'] = trim($_POST['company_name']);
     $config['company_color'] = trim($_POST['company_color']);
-    $config['github_url'] = trim($_POST['github_url']);
     $config['logo_link'] = trim($_POST['logo_link']);
     $config['privacy_url'] = trim($_POST['privacy_url']);
     $config['imprint_url'] = trim($_POST['imprint_url']);
@@ -116,12 +115,8 @@ include __DIR__ . '/../includes/header.php';
         <div class="card-body">
 
             <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label class="form-label"><?= h(admin_t('github_link', $config)) ?> <span class="badge bg-secondary ms-1">Optional</span></label>
-                    <input type="url" name="github_url" value="<?= h($config['github_url']) ?>" class="form-control">
-                </div>
 
-                <div class="col-md-6 mb-3">
+                <div class="col-12 mb-3">
                     <label class="form-label"><?= h(admin_t('contact_email_404', $config)) ?></label>
                     <input type="email" name="contact_email" value="<?= h($config['contact_email']) ?>" class="form-control">
                 </div>
