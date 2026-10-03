@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $contact['bild'] = '';
     }
 
-    $bild = upload_image('bild', 'mitarbeiter-' . $id);
+    $bild = isset($_POST['delete_bild']) ? '' : upload_image('bild', 'mitarbeiter-' . $id);
 
     if ($bild !== '') {
         if (!empty($contacts[$currentKey]['bild'])) {
@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     save_contacts($contacts);
 
-    header('Location:/admin');
+    header('Location: ' . (isset($_POST['delete_bild']) ? '/admin/edit?id=' . rawurlencode($id) : '/admin'));
     exit;
 }
 
