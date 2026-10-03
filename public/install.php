@@ -1,6 +1,7 @@
 <?php
 
-require_once 'includes/functions.php';
+require_once __DIR__ . '/includes/functions.php';
+start_admin_session();
 
 $config = get_config();
 $contacts = load_json('contacts.json', []);
@@ -18,6 +19,7 @@ $uploadsWritable = is_writable(__DIR__ . '/uploads');
 $baseDomain = base_domain_from_host();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_csrf();
     $companyName = trim($_POST['company_name'] ?? '');
     $companyColor = trim($_POST['company_color'] ?? '#0d6efd');
     $logoLink = trim($_POST['logo_link'] ?? '');
@@ -75,13 +77,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $config['admin_user'] = $adminUser;
         $config['admin_password_hash'] = password_hash($adminPassword, PASSWORD_DEFAULT);
         $config['installed'] = true;
+        $config['api_token'] = bin2hex(random_bytes(24));
 
-        if (!empty($_FILES['company_logo']['name']) && is_uploaded_file($_FILES['company_logo']['tmp_name'])) {
-            $logo = upload_image('company_logo', 'logo');
-            if ($logo !== '') {
-                $config['company_logo'] = $logo;
-            }
-        }
+        $logo = upload_image('company_logo', 'logo');
+        if ($logo !== '') $config['company_logo'] = $logo;
 
         save_json('config.json', $config);
 
@@ -145,7 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
 
-        <form method="post" enctype="multipart/form-data">
+        <form method="post" enctype="multipart/form-data"><?= csrf_field() ?>
 
             <div class="card mb-4">
                 <div class="card-header">Firmendaten</div>
@@ -165,7 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     <div class="mb-3">
                         <label class="form-label">Firmenlogo</label>
-                        <input type="file" name="company_logo" class="form-control" accept=".png,.jpg,.jpeg,.svg,.webp">
+                        <input type="file" name="company_logo" class="form-control" accept=".png,.jpg,.jpeg,.webp">
                     </div>
 
                     <div class="mb-3">

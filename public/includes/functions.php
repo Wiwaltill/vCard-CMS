@@ -1,5 +1,20 @@
 <?php
 
+// Serialize complete read/modify/write requests, including API and config migration.
+// Keep the lock file stable: JSON files themselves are replaced atomically.
+if (PHP_SAPI !== 'cli') {
+    $storageLock = fopen(__DIR__ . '/../../data/.storage.lock', 'c');
+    if (!$storageLock || !flock($storageLock, LOCK_EX)) {
+        http_response_code(503);
+        exit('Storage temporarily unavailable.');
+    }
+    register_shutdown_function(static function () use ($storageLock) {
+        flock($storageLock, LOCK_UN);
+        fclose($storageLock);
+    });
+}
+
+
 function data_path(string $file): string
 {
     return __DIR__ . '/../../data/' . $file;
@@ -12,17 +27,24 @@ function load_json_file_path(string $path, array $fallback = []): array
     }
 
     $json = file_get_contents($path);
-    $data = json_decode($json, true);
-
-    return is_array($data) ? $data : $fallback;
+    if ($json === false) throw new RuntimeException('Cannot read JSON storage.');
+    $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+    if (!is_array($data)) throw new RuntimeException('Invalid JSON storage.');
+    return $data;
 }
 
 function save_json_file_path(string $path, array $data): void
 {
-    file_put_contents(
-        $path,
-        json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
-    );
+    $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+    $tmp = tempnam(dirname($path), '.json-');
+    if ($tmp === false) throw new RuntimeException('Cannot create storage file.');
+    try {
+        if (file_put_contents($tmp, $json, LOCK_EX) !== strlen($json) || !chmod($tmp, 0600) || !rename($tmp, $path)) {
+            throw new RuntimeException('Cannot save JSON storage.');
+        }
+    } finally {
+        if (is_file($tmp)) unlink($tmp);
+    }
 }
 
 function sample_file_for(string $file): string
@@ -155,9 +177,12 @@ function get_config(): array
         ]
     ], $sample);
 
-    $config = load_json('config.json', $defaults);
-
-    return array_merge($defaults, $config);
+    $config = array_merge($defaults, load_json('config.json', $defaults));
+    if (empty($config['api_token']) || $config['api_token'] === 'change-me-after-install') {
+        $config['api_token'] = bin2hex(random_bytes(24));
+        save_json('config.json', $config);
+    }
+    return $config;
 }
 
 function load_contacts(): array
@@ -188,6 +213,7 @@ function make_contact_id(string $vorname, string $nachname, array $contacts, ?st
         $base = 'xx';
     }
 
+    $base = str_pad($base, 2, 'x');
     $id = $base;
     $counter = 2;
 
@@ -506,28 +532,30 @@ function unique_data_type_key(string $label, array $existingTypes): string
 }
 
 
+function valid_image_file(string $path, string $extension): bool
+{
+    $mimes = ['png' => 'image/png', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'webp' => 'image/webp'];
+    if (!isset($mimes[$extension]) || !is_file($path) || filesize($path) > 5 * 1024 * 1024) return false;
+    $mime = (new finfo(FILEINFO_MIME_TYPE))->file($path);
+    $size = @getimagesize($path);
+    return $mime === $mimes[$extension] && $size !== false && $size[0] > 0 && $size[1] > 0
+        && $size[0] <= 8192 && $size[1] <= 8192 && $size[0] * $size[1] <= 25000000;
+}
+
 function upload_image(string $field, string $prefix): string
 {
-    if (empty($_FILES[$field]['name']) || !is_uploaded_file($_FILES[$field]['tmp_name'])) {
-        return '';
+    if (!isset($_FILES[$field]) || ($_FILES[$field]['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) return '';
+    $file = $_FILES[$field];
+    $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if ($file['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name']) || !valid_image_file($file['tmp_name'], $extension)) {
+        http_response_code(422);
+        exit('Invalid image. Use PNG, JPEG or WebP, at most 5 MB and 8192 pixels per side.');
     }
-
-    $extension = strtolower(pathinfo($_FILES[$field]['name'], PATHINFO_EXTENSION));
-    $allowed = ['png', 'jpg', 'jpeg', 'webp', 'svg'];
-
-    if (!in_array($extension, $allowed, true)) {
-        return '';
+    $filename = preg_replace('/[^a-z0-9_-]/i', '', $prefix) . '-' . bin2hex(random_bytes(16)) . '.' . $extension;
+    if (!move_uploaded_file($file['tmp_name'], __DIR__ . '/../uploads/' . $filename)) {
+        throw new RuntimeException('Cannot save upload.');
     }
-
-    $safePrefix = preg_replace('/[^a-z0-9_-]/i', '', $prefix);
-    $filename = $safePrefix . '-' . time() . '.' . $extension;
-    $target = __DIR__ . '/../uploads/' . $filename;
-
-    if (move_uploaded_file($_FILES[$field]['tmp_name'], $target)) {
-        return '/uploads/' . $filename;
-    }
-
-    return '';
+    return '/uploads/' . $filename;
 }
 
 function delete_public_file(?string $publicPath): bool
@@ -547,7 +575,7 @@ function delete_public_file(?string $publicPath): bool
         return false;
     }
 
-    if (strpos($file, $uploadsDir) !== 0) {
+    if (strpos($file, $uploadsDir . DIRECTORY_SEPARATOR) !== 0) {
         return false;
     }
 
@@ -591,9 +619,68 @@ function require_installed(): void
     }
 }
 
+function start_admin_session(): void
+{
+    if (session_status() === PHP_SESSION_ACTIVE) return;
+    session_name('vcard_admin_session');
+    ini_set('session.use_strict_mode', '1');
+    ini_set('session.use_only_cookies', '1');
+    ini_set('session.gc_maxlifetime', '28800');
+    session_set_cookie_params(['lifetime' => 0, 'path' => '/',
+        'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+        'httponly' => true, 'samesite' => 'Lax']);
+    session_start();
+    header('Cache-Control: no-store');
+}
+
+function csrf_field(): string
+{
+    start_admin_session();
+    if (empty($_SESSION['csrf'])) $_SESSION['csrf'] = bin2hex(random_bytes(32));
+    return '<input type="hidden" name="csrf_token" value="' . h($_SESSION['csrf']) . '">';
+}
+
+function require_csrf(): void
+{
+    start_admin_session();
+    $token = $_POST['csrf_token'] ?? '';
+    if (!is_string($token) || empty($_SESSION['csrf']) || !hash_equals($_SESSION['csrf'], $token)) {
+        http_response_code(403);
+        exit('Invalid form token. Reload the page and try again.');
+    }
+}
+
+function auth_fingerprint(array $config): string
+{
+    return hash('sha256', ($config['admin_user'] ?? '') . ':' . ($config['admin_password_hash'] ?? ''));
+}
+
+function remember_cookie(string $token, int $expires): void
+{
+    setcookie('vcard_remember', $token, ['expires' => $expires, 'path' => '/admin',
+        'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+        'httponly' => true, 'samesite' => 'Lax']);
+}
+
 function is_logged_in(): bool
 {
-    return isset($_COOKIE['kb_admin_login']) && $_COOKIE['kb_admin_login'] === hash('sha256', 'kb-events-admin');
+    start_admin_session();
+    $config = get_config();
+    $fingerprint = auth_fingerprint($config);
+    if (isset($_SESSION['admin_fingerprint']) && hash_equals($fingerprint, $_SESSION['admin_fingerprint'])
+        && ($_SESSION['admin_expires'] ?? 0) > time()) return true;
+    unset($_SESSION['admin_fingerprint']);
+    $token = $_COOKIE['vcard_remember'] ?? '';
+    $remember = load_json('remember.json', []);
+    $key = is_string($token) ? hash('sha256', $token) : '';
+    if (isset($remember[$key]) && ($remember[$key]['expires'] ?? 0) > time()
+        && hash_equals($fingerprint, $remember[$key]['fingerprint'] ?? '')) {
+        session_regenerate_id(true);
+        $_SESSION['admin_fingerprint'] = $fingerprint;
+        $_SESSION['admin_expires'] = time() + 8 * 3600;
+        return true;
+    }
+    return false;
 }
 
 function require_login(): void
@@ -602,6 +689,7 @@ function require_login(): void
         header('Location: /admin/login');
         exit;
     }
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') require_csrf();
 }
 
 function h(?string $value): string
@@ -775,7 +863,7 @@ function contact_url(array $contact): string
 
 function api_token(array $config): string
 {
-    if (empty($config['api_token'])) {
+    if (empty($config['api_token']) || $config['api_token'] === 'change-me-after-install') {
         $config['api_token'] = bin2hex(random_bytes(24));
         save_json('config.json', $config);
     }
@@ -784,7 +872,7 @@ function api_token(array $config): string
 
 function require_api_auth(array $config): void
 {
-    $token = $_SERVER['HTTP_X_API_TOKEN'] ?? ($_GET['token'] ?? '');
+    $token = $_SERVER['HTTP_X_API_TOKEN'] ?? '';
     if (!hash_equals(api_token($config), (string)$token)) {
         http_response_code(401);
         header('Content-Type: application/json; charset=utf-8');
@@ -838,16 +926,28 @@ function make_backup_zip(): string
 {
     $dir = data_path('backups');
     if (!is_dir($dir)) mkdir($dir, 0775, true);
-    $zipPath = $dir . '/backup-' . date('Ymd-His') . '.zip';
+    $zipPath = $dir . '/backup-' . date('Ymd-His') . '-' . bin2hex(random_bytes(4)) . '.zip';
     $zip = new ZipArchive();
-    if ($zip->open($zipPath, ZipArchive::CREATE) !== true) return '';
-    foreach (['config.json','contacts.json'] as $file) if (file_exists(data_path($file))) $zip->addFile(data_path($file), 'data/'.$file);
+    if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) return '';
+    foreach (['config.json','contacts.json'] as $file) {
+        if (file_exists(data_path($file)) && !$zip->addFile(data_path($file), 'data/'.$file)) {
+            $zip->close();
+            return '';
+        }
+    }
     $uploads = realpath(__DIR__ . '/../uploads');
     if ($uploads) {
         $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($uploads, FilesystemIterator::SKIP_DOTS));
-        foreach ($it as $file) if ($file->isFile()) $zip->addFile($file->getPathname(), 'public/uploads/'.$file->getFilename());
+        foreach ($it as $file) {
+            if ($file->isLink() || !$file->isFile() || in_array($file->getFilename(), ['.htaccess', '.gitkeep'], true)) continue;
+            if (!$zip->addFile($file->getPathname(), 'public/uploads/'.$file->getFilename())) {
+                $zip->close();
+                return '';
+            }
+        }
     }
-    $zip->close();
+    if (!$zip->close()) return '';
+    chmod($zipPath, 0600);
     return $zipPath;
 }
 
@@ -861,7 +961,7 @@ function backup_storage_dir(): string
 function backup_file_path(string $name): string
 {
     $name = basename($name);
-    if (!preg_match('/^backup-[0-9]{8}-[0-9]{6}\.zip$/', $name)) return '';
+    if (!preg_match('/^backup-[0-9]{8}-[0-9]{6}(?:-[a-f0-9]{8})?\.zip$/', $name)) return '';
     $path = backup_storage_dir() . '/' . $name;
     return is_file($path) ? $path : '';
 }
@@ -895,21 +995,137 @@ function format_bytes(int $bytes): string
     return $bytes . ' B';
 }
 
-function restore_backup_zip(string $tmp): bool
+function valid_backup_config(array $config): bool
 {
-    $zip = new ZipArchive();
-    if ($zip->open($tmp) !== true) return false;
-    $extractBase = sys_get_temp_dir() . '/vcard-restore-' . bin2hex(random_bytes(4));
-    mkdir($extractBase, 0775, true);
-    $zip->extractTo($extractBase);
-    $zip->close();
-    foreach (['config.json','contacts.json'] as $file) {
-        $src = $extractBase . '/data/' . $file;
-        if (is_file($src)) copy($src, data_path($file));
+    if (!is_string($config['admin_user'] ?? null) || !is_string($config['admin_password_hash'] ?? null)
+        || empty(password_get_info($config['admin_password_hash'])['algo'])
+        || !is_array($config['data_types'] ?? null)) return false;
+    foreach ($config as $key => $value) {
+        if ($key !== 'data_types' && !is_scalar($value) && $value !== null) return false;
     }
-    $uploadsSrc = $extractBase . '/public/uploads';
-    if (is_dir($uploadsSrc)) {
-        foreach (glob($uploadsSrc . '/*') ?: [] as $src) if (is_file($src)) copy($src, __DIR__ . '/../uploads/' . basename($src));
+    foreach ($config['data_types'] as $type) {
+        if (!is_array($type)) return false;
+        foreach ($type as $value) if (!is_scalar($value) && $value !== null) return false;
     }
     return true;
+}
+
+function valid_backup_contacts(array $contacts): bool
+{
+    if ($contacts !== [] && array_keys($contacts) !== range(0, count($contacts) - 1)) return false;
+    $seen = [];
+    foreach ($contacts as $contact) {
+        if (!is_array($contact) || !is_string($contact['id'] ?? null)
+            || !preg_match('/^[a-z0-9]{2,20}$/D', $contact['id']) || isset($seen[$contact['id']])) return false;
+        $seen[$contact['id']] = true;
+        foreach ($contact as $key => $value) {
+            if ($key === 'fields') {
+                if (!is_array($value)) return false;
+                foreach ($value as $field) if (!is_string($field)) return false;
+            } elseif (!is_scalar($value) && $value !== null) return false;
+        }
+    }
+    return true;
+}
+
+function snapshot_restore_target(string $target): ?string
+{
+    if (!is_file($target)) return null;
+    $snapshot = tempnam(sys_get_temp_dir(), 'vcard-rollback-');
+    if (!$snapshot || !copy($target, $snapshot)) {
+        if ($snapshot && is_file($snapshot)) unlink($snapshot);
+        throw new RuntimeException('Cannot prepare restore rollback.');
+    }
+    return $snapshot;
+}
+
+function restore_backup_zip(string $tmp): bool
+{
+    if (!is_file($tmp) || filesize($tmp) > 50 * 1024 * 1024) return false;
+    $zip = new ZipArchive();
+    if ($zip->open($tmp) !== true) return false;
+    $staged = [];
+    $json = [];
+    $names = [];
+    $rollback = [];
+    $committed = false;
+    $total = 0;
+    try {
+        if ($zip->numFiles > 1000) return false;
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $stat = $zip->statIndex($i);
+            if (!$stat) return false;
+            $name = $stat['name'];
+            $total += $stat['size'];
+            if ($total > 100 * 1024 * 1024 || $stat['size'] > 10 * 1024 * 1024 || isset($names[$name])) return false;
+            $names[$name] = true;
+            if (in_array($name, ['public/uploads/.gitkeep', 'public/uploads/.htaccess'], true)) continue;
+            $isJson = in_array($name, ['data/config.json', 'data/contacts.json'], true);
+            // Never extract arbitrary archive paths or executable/SVG files.
+            if (!$isJson && !preg_match('~^public/uploads/[a-zA-Z0-9_-]+\.(png|jpg|jpeg|webp)$~D', $name)) return false;
+            $contents = $zip->getFromIndex($i, $stat['size'] + 1);
+            if ($contents === false || strlen($contents) !== $stat['size']) return false;
+            if ($isJson) {
+                $value = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
+                if (!is_array($value)) return false;
+                $json[basename($name)] = $value;
+            } else {
+                $path = tempnam(sys_get_temp_dir(), 'vcard-image-');
+                if (!$path) return false;
+                $staged[$name] = $path;
+                if (file_put_contents($path, $contents) !== strlen($contents)
+                    || !valid_image_file($path, strtolower(pathinfo($name, PATHINFO_EXTENSION)))) return false;
+            }
+        }
+        if (!isset($json['config.json'], $json['contacts.json'])
+            || !valid_backup_config($json['config.json']) || !valid_backup_contacts($json['contacts.json'])) return false;
+        // Validate everything before modifying live data; preserve a rollback snapshot.
+        if (make_backup_zip() === '') return false;
+        foreach (['config.json', 'contacts.json', 'remember.json'] as $file) {
+            $target = data_path($file);
+            $rollback[$target] = snapshot_restore_target($target);
+        }
+        foreach ($staged as $name => $path) {
+            $target = __DIR__ . '/../uploads/' . basename($name);
+            if (is_link($target)) return false;
+            $rollback[$target] = snapshot_restore_target($target);
+            $new = tempnam(dirname($target), '.restore-');
+            if (!$new) return false;
+            try {
+                if (!copy($path, $new) || !chmod($new, 0644) || !rename($new, $target)) return false;
+            } finally {
+                if (is_file($new)) unlink($new);
+            }
+        }
+        save_json('config.json', $json['config.json']);
+        save_json('contacts.json', $json['contacts.json']);
+        save_json('remember.json', []);
+        $committed = true;
+        return true;
+    } catch (Throwable $error) {
+        return false;
+    } finally {
+        try {
+            if (!$committed) {
+                foreach ($rollback as $target => $snapshot) {
+                    if ($snapshot === null) {
+                        if (is_file($target)) unlink($target);
+                    } else {
+                        $recovery = tempnam(dirname($target), '.restore-');
+                        try {
+                            if (!$recovery || !copy($snapshot, $recovery) || !rename($recovery, $target)) {
+                                throw new RuntimeException('Restore rollback failed. Recover the pre-restore backup.');
+                            }
+                        } finally {
+                            if ($recovery && is_file($recovery)) unlink($recovery);
+                        }
+                    }
+                }
+            }
+        } finally {
+            $zip->close();
+            foreach ($staged as $path) if (is_file($path)) unlink($path);
+            foreach ($rollback as $snapshot) if ($snapshot !== null && is_file($snapshot)) unlink($snapshot);
+        }
+    }
 }

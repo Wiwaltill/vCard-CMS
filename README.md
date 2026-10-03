@@ -7,9 +7,7 @@ Ein kleines PHP-CMS mit Adminbereich, Kontaktkarten, vCard-Downloads und QR-Code
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![GitHub release](https://img.shields.io/github/v/release/Wiwaltill/vCard-CMS)](https://github.com/Wiwaltill/vCard-CMS/releases)
 
-[Installation](#installation) · [Verwendung](#verwendung) · [REST API](#rest-api) · [Backups & Updates](#backups--updates) · [Betrieb & bekannte-grenzen](#betrieb--bekannte-grenzen)
-
-> **Aktueller Sicherheitshinweis:** Die Admin-Anmeldung verwendet derzeit einen statischen, berechenbaren Cookie-Wert. Vor einem öffentlich erreichbaren Betrieb muss die Anmeldung abgesichert werden. Weitere offene Punkte stehen unter [Betrieb & bekannte Grenzen](#betrieb--bekannte-grenzen).
+[Installation](#installation) · [Verwendung](#verwendung) · [REST API](#rest-api) · [Backups & Updates](#backups--updates) · [Betrieb & Sicherheit](#betrieb--sicherheit)
 
 ## Funktionen
 
@@ -31,7 +29,7 @@ Ein kleines PHP-CMS mit Adminbereich, Kontaktkarten, vCard-Downloads und QR-Code
 
 - PHP **8.0 oder neuer**; für den Betrieb eine gepflegte PHP-Version einsetzen.
 - Apache mit `mod_rewrite` und erlaubten `.htaccess`-Regeln, beispielsweise `AllowOverride All` für `public/`.
-- PHP-Erweiterung **ZipArchive** für Backup und Restore.
+- PHP-Erweiterungen **fileinfo** für Bildprüfungen und **ZipArchive** für Backup und Restore.
 - Schreibzugriff des PHP-Prozesses auf `data/` und `public/uploads/`.
 - HTTPS für den produktiven Betrieb und die Service-Worker-Funktion.
 
@@ -48,7 +46,7 @@ Alternativ das Repository herunterladen und auf den Server kopieren. Auch verste
 
 ### 2. Webroot konfigurieren
 
-Den **DocumentRoot auf `public/`** setzen. `data/` liegt außerhalb des öffentlich erreichbaren Verzeichnisses und enthält später auch Passwort-Hash und API-Token.
+Den **DocumentRoot auf `public/`** setzen. `data/` liegt außerhalb des öffentlich erreichbaren Verzeichnisses und enthält später auch Passwort-Hash und API-Token. Die zusätzliche `data/.htaccess` sperrt unter Apache direkte Zugriffe, sofern `.htaccess`-Regeln aktiviert sind.
 
 ```text
 vCard-CMS/
@@ -106,7 +104,7 @@ Am besten zunächst einen CSV-Export als Vorlage herunterladen. Das Trennzeichen
 
 ## REST API
 
-Die API lässt sich unter `/admin/api` aktivieren. Dort vor der ersten Verwendung einen eigenen Token über **„Token neu erzeugen“** erstellen; die Beispielkonfiguration enthält einen bekannten Platzhalter.
+Die API lässt sich unter `/admin/api` aktivieren. Ein zufälliger Token wird bei der Installation erzeugt; leere Tokens und der bekannte Platzhalter aus älteren Installationen werden automatisch ersetzt. Über **„Token neu erzeugen“** lässt er sich jederzeit wechseln.
 
 Den Token über den Header `X-API-Token` übergeben:
 
@@ -135,7 +133,7 @@ curl --request POST \
 
 Ohne `id` erzeugt die Anwendung eine ID. `PUT` führt übergebene Felder mit dem bestehenden Kontakt zusammen. Die API antwortet mit JSON; typische Statuscodes sind `201` beim Anlegen, `401` bei ungültigem Token, `403` bei deaktivierter API und `404` bei unbekanntem Kontakt.
 
-Die öffentliche Kartenroute akzeptiert derzeit IDs aus zwei bis sechs Kleinbuchstaben oder Ziffern. Bei selbst vergebenen IDs diese Grenze berücksichtigen; die API-Einzelroute erlaubt bis zu 20 Zeichen.
+API und öffentliche Kartenrouten akzeptieren IDs aus zwei bis 20 Kleinbuchstaben oder Ziffern. Schreibanfragen erwarten ein JSON-Objekt mit höchstens 1 MB. Fehlerhaftes JSON liefert `400`, ungültige Felder oder IDs `422` und eine bereits vergebene ID `409`. Tokens ausschließlich als Header übergeben; Tokens in der URL werden nicht akzeptiert.
 
 ## Backups & Updates
 
@@ -143,24 +141,46 @@ Unter `/admin/backup` ZIP-Sicherungen erstellen, herunterladen und wiederherstel
 
 - `data/config.json` einschließlich Zugangskonfiguration und API-Token
 - `data/contacts.json`
-- Dateien aus `public/uploads/`
+- Dateien aus `public/uploads/` (ohne `.htaccess` und `.gitkeep`)
 
-Die ZIP-Dateien werden zusätzlich unter `data/backups/` gespeichert. Sicherungen vertraulich behandeln und eine Kopie außerhalb des Webservers aufbewahren. Beim Restore werden enthaltene Konfiguration, Kontakte und gleichnamige Uploads überschrieben; zusätzliche bestehende Uploads werden nicht entfernt.
+Die ZIP-Dateien werden zusätzlich unter `data/backups/` gespeichert. Sicherungen vertraulich behandeln und eine Kopie außerhalb des Webservers aufbewahren. Beim Restore werden enthaltene Konfiguration, Kontakte und gleichnamige Uploads überschrieben; zusätzliche bestehende Uploads werden nicht entfernt. Vor dem Restore wird automatisch eine Sicherung des aktuellen Zustands angelegt. Dauerhafte Login-Tokens werden nach einem Restore widerrufen.
+
+Restore akzeptiert ZIP-Dateien bis 50 MB, höchstens 1.000 Einträge und maximal 100 MB entpackte Daten. Konfiguration, Kontakte und Bildinhalte werden vor Änderungen geprüft. Backups mit SVGs oder anderen nicht unterstützten Dateien werden abgelehnt; ältere SVG-Bilder vorher in PNG oder WebP umwandeln und ihre Referenzen aktualisieren.
 
 Vor Updates ein Backup herunterladen. Beim Austausch der Programmdateien **`data/config.json`, `data/contacts.json`, `data/backups/` und `public/uploads/` erhalten**. Neue Konfigurationsschlüssel werden anhand von `config.sample.json` ergänzt.
 
-## Betrieb & bekannte Grenzen
+## Betrieb & Sicherheit
 
-Die aktuelle Implementierung hat offene Punkte, die vor einem öffentlichen Betrieb behoben werden sollten:
+- **Anmeldung:** Serverseitige Sessions mit zufälliger Session-ID, ID-Wechsel nach dem Login und acht Stunden Gültigkeit. „Angemeldet bleiben“ verwendet separate zufällige Tokens mit 30 Tagen Gültigkeit; gespeichert werden nur deren Hashes. Passwort- oder Benutzername-Änderungen entwerten frühere Anmeldungen.
+- **Formulare:** CSRF-Tokens schützen Login, Installation und schreibende Adminaktionen. Löschen und Abmelden sind ausschließlich per POST möglich.
+- **Bilder:** Neue Uploads akzeptieren PNG, JPEG und WebP mit passender MIME-Erkennung und gültigen Bildmaßen. Limits: 5 MB, 8.192 Pixel pro Seite und 25 Millionen Pixel insgesamt. SVG-Uploads sind gesperrt; Dateinamen enthalten einen zufälligen Anteil. `public/uploads/.htaccess` sperrt ausführbare Dateitypen und aktive Inhalte unter Apache.
+- **Datensicherung:** Restore verwendet eine Liste erlaubter Dateipfade und prüft JSON-Struktur, eindeutige Kontakt-IDs, Bildinhalte und Größen. ZIP-Einträge werden nicht frei ins Dateisystem entpackt. Bei fehlgeschlagenen Änderungen wird der vorherige Zustand wiederhergestellt.
+- **Speicherung:** Eine gemeinsame Dateisperre umfasst den gesamten Anfrageablauf; JSON wird über temporäre Dateien atomar ersetzt. Schreib- und JSON-Fehler werden erkannt. Dadurch werden Anfragen serialisiert; für große Installationen wäre eine Datenbank sinnvoll.
+- **Cache:** Admin- und API-Antworten senden `Cache-Control: no-store`. Der Service Worker speichert ausschließlich das statische App-Icon und entfernt ältere vCard-Caches beim Aktivieren. Kontaktkarten werden nicht offline gespeichert.
 
-- **Admin-Authentifizierung:** Der Login-Cookie ist statisch und lässt sich ohne Passwort berechnen. Serverseitige Sessions und separate zufällige Tokens für dauerhafte Anmeldungen sind erforderlich.
-- **Schreibaktionen:** CSRF-Schutz fehlt im Adminbereich; Kontaktlöschung ist derzeit per GET möglich.
-- **API-Token:** Der bekannte Platzhalter aus der Beispielkonfiguration wird bei der Installation nicht automatisch ersetzt. Einen eigenen Token erzeugen oder die API deaktivieren.
-- **Uploads und Restore:** Bilder werden anhand ihrer Dateiendung geprüft, SVG ist zugelassen. MIME-/Inhaltsprüfung, Größenlimits und die Validierung von Backup-Inhalten fehlen.
-- **Offline-Cache:** Der Service Worker speichert derzeit GET-Antworten auch für Admin- und API-Aufrufe. Den Cache auf geeignete öffentliche Ressourcen begrenzen.
-- **JSON-Speicherung:** Schreibvorgänge erfolgen ohne Dateisperre, atomaren Austausch oder Fehlerprüfung. Gleichzeitige Änderungen können Daten verlieren; das Projekt eignet sich daher vorerst für kleine Installationen mit wenigen Schreibzugriffen.
+Beim Update werden alte Login-Cookies nicht mehr akzeptiert; erneut anmelden. `data/remember.json` und `data/.storage.lock` gehören zu den privaten Laufzeitdateien und dürfen nicht öffentlich erreichbar sein. Für Uploads die PHP-Limits `upload_max_filesize` und `post_max_size` passend konfigurieren, für ZIP-Restore entsprechend höher als 50 MB.
+
+Die Tests ersetzen keine Prüfung der konkreten Serverkonfiguration. HTTPS, ein DocumentRoot auf `public/` und aktivierte `.htaccess`-Regeln bleiben Voraussetzungen für den produktiven Betrieb.
 
 Bootstrap und Bootstrap Icons werden über jsDelivr geladen. QR-Codes werden durch `api.qrserver.com` erzeugt; dabei wird die URL der Kontaktkarte an diesen Dienst übertragen. Für einen Betrieb ohne diese externen Abhängigkeiten Assets lokal ausliefern und QR-Codes lokal erzeugen.
+
+## Tests
+
+Mit einer lokalen PHP-Laufzeit einschließlich `fileinfo` und `ZipArchive`:
+
+```bash
+find public tests -name '*.php' -print0 | xargs -0 -n1 php -l
+php tests/security.php
+python3 tests/http_security.py
+```
+
+Die Tests verwenden temporäre Verzeichnisse und verändern keine bestehenden Kontakte oder Einstellungen. Der HTTP-Test startet einen lokalen PHP-Testserver mit mehreren Prozessen und prüft unter anderem 20 gleichzeitige API-Schreibzugriffe. Er benötigt ein Unix-System und Python 3. Optional lässt sich der Service Worker mit Node.js prüfen:
+
+```bash
+node tests/service_worker.mjs
+```
+
+GitHub Actions prüft Syntax und Sicherheitsfälle mit PHP 8.0 und 8.4.
 
 ## Mitwirken & Lizenz
 

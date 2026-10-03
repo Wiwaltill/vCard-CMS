@@ -1,5 +1,5 @@
 <?php
-require_once '../includes/functions.php';
+require_once __DIR__ . '/../includes/functions.php';
 require_installed();
 require_login();
 
@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $backups = list_backup_zips();
-include '../includes/header.php';
+include __DIR__ . '/../includes/header.php';
 ?>
 <h1 class="mb-4"><?= h(admin_t('backup_restore', $config)) ?></h1>
 <?php if ($message): ?><div class="alert alert-info"><?= h($message) ?></div><?php endif; ?>
@@ -59,7 +59,7 @@ include '../includes/header.php';
         <div class="card shadow-sm">
             <div class="card-header"><?= h(admin_t('create_backup', $config)) ?></div>
             <div class="card-body">
-                <form method="post" target="backupDownloadFrame" data-reload-after-download="1"><input type="hidden" name="action" value="create">
+                <form method="post" target="backupDownloadFrame" data-reload-after-download="1"><?= csrf_field() ?><input type="hidden" name="action" value="create">
                     <p><?= h(admin_t('backup_export_help', $config)) ?></p><button class="btn btn-primary"><i class="bi bi-archive"></i> <?= h(admin_t('download_backup', $config)) ?></button>
                 </form>
             </div>
@@ -69,7 +69,7 @@ include '../includes/header.php';
         <div class="card shadow-sm">
             <div class="card-header"><?= h(admin_t('restore', $config)) ?></div>
             <div class="card-body">
-                <form method="post" enctype="multipart/form-data" onsubmit="return confirm('<?= h(admin_t('restore_confirm', $config)) ?>');"><input type="hidden" name="action" value="restore"><input type="file" name="backup" accept=".zip,application/zip" class="form-control mb-3" required><button class="btn btn-warning"><i class="bi bi-arrow-counterclockwise"></i> <?= h(admin_t('restore_backup', $config)) ?></button></form>
+                <form method="post" enctype="multipart/form-data" onsubmit="return confirm('<?= h(admin_t('restore_confirm', $config)) ?>');"><?= csrf_field() ?><input type="hidden" name="action" value="restore"><input type="file" name="backup" accept=".zip,application/zip" class="form-control mb-3" required><button class="btn btn-warning"><i class="bi bi-arrow-counterclockwise"></i> <?= h(admin_t('restore_backup', $config)) ?></button></form>
             </div>
         </div>
     </div>
@@ -99,17 +99,17 @@ include '../includes/header.php';
                                 <td><?= h(format_bytes((int)$backup['size'])) ?></td>
                                 <td>
                                     <div class="d-flex gap-2">
-                                        <form method="post" target="backupDownloadFrame">
+                                        <form method="post" target="backupDownloadFrame"><?= csrf_field() ?>
                                             <input type="hidden" name="action" value="download_stored">
                                             <input type="hidden" name="file" value="<?= h($backup['name']) ?>">
                                             <button class="btn btn-primary btn-sm" title="<?= h(admin_t('download_backup', $config)) ?>"><i class="bi bi-download"></i></button>
                                         </form>
-                                        <form method="post" onsubmit="return confirm('<?= h(admin_t('restore_confirm', $config)) ?>');">
+                                        <form method="post" onsubmit="return confirm('<?= h(admin_t('restore_confirm', $config)) ?>');"><?= csrf_field() ?>
                                             <input type="hidden" name="action" value="restore_stored">
                                             <input type="hidden" name="file" value="<?= h($backup['name']) ?>">
                                             <button class="btn btn-warning btn-sm" title="<?= h(admin_t('restore_backup', $config)) ?>"><i class="bi bi-arrow-counterclockwise"></i></button>
                                         </form>
-                                        <form method="post" onsubmit="return confirm('<?= h(admin_t('delete_backup_confirm', $config)) ?>');">
+                                        <form method="post" onsubmit="return confirm('<?= h(admin_t('delete_backup_confirm', $config)) ?>');"><?= csrf_field() ?>
                                             <input type="hidden" name="action" value="delete_stored">
                                             <input type="hidden" name="file" value="<?= h($backup['name']) ?>">
                                             <button class="btn btn-danger btn-sm" title="<?= h(admin_t('delete', $config)) ?>"><i class="bi bi-trash"></i></button>
@@ -136,4 +136,4 @@ include '../includes/header.php';
     });
 })();
 </script>
-<?php include '../includes/footer.php'; ?>
+<?php include __DIR__ . '/../includes/footer.php'; ?>

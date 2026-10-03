@@ -1,5 +1,5 @@
 <?php
-require_once '../includes/functions.php';
+require_once __DIR__ . '/../includes/functions.php';
 require_installed();
 require_login();
 $config = get_config();
@@ -11,13 +11,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 $token = api_token($config);
-include '../includes/header.php';
+include __DIR__ . '/../includes/header.php';
 ?>
 <h1 class="mb-4">REST API</h1>
 <?php if (isset($_GET['saved'])): ?><div class="alert alert-success"><?= h(admin_t('api_saved', $config)) ?></div><?php endif; ?>
 <div class="card shadow-sm">
     <div class="card-body">
-        <form method="post">
+        <form method="post"><?= csrf_field() ?>
             <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" name="api_enabled" id="api_enabled" <?= !empty($config['api_enabled']) ? 'checked' : '' ?>><label class="form-check-label" for="api_enabled"><?= h(admin_t('api_enable', $config)) ?></label></div>
             <label class="form-label"><?= h(admin_t('api_token', $config)) ?></label><input class="form-control font-monospace mb-3" value="<?= h($token) ?>" readonly>
             <button class="btn btn-success"><?= h(admin_t('save', $config)) ?></button> <button class="btn btn-outline-danger" name="regen" value="1"><?= h(admin_t('regen_token', $config)) ?></button>
@@ -33,4 +33,4 @@ include '../includes/header.php';
         </pre>
     </div>
 </div>
-<?php include '../includes/footer.php'; ?>
+<?php include __DIR__ . '/../includes/footer.php'; ?>

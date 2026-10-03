@@ -1,0 +1,2 @@
+# Defense in depth if data/ is accidentally placed beneath an Apache webroot.
+Require all denied

@@ -1,6 +1,6 @@
 <?php
 
-require_once 'includes/functions.php';
+require_once __DIR__ . '/includes/functions.php';
 require_installed();
 
 header('X-Robots-Tag: noindex, nofollow', true);
@@ -20,7 +20,7 @@ foreach ($contacts as $contact) {
 }
 
 if (!$card) {
-    require 'contact-not-found.php';
+    require __DIR__ . '/contact-not-found.php';
     exit;
 }
 

@@ -1,15 +1,21 @@
 <?php
 
-require_once '../includes/functions.php';
+require_once __DIR__ . '/../includes/functions.php';
+start_admin_session();
 require_installed();
 
 $config = get_config();
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_csrf();
     $user = $_POST['username'] ?? '';
     $password = $_POST['password'] ?? '';
     $remember = isset($_POST['remember']);
+    if (!is_string($user) || !is_string($password)) {
+        http_response_code(422);
+        exit('Invalid credentials.');
+    }
 
     $validUser = hash_equals($config['admin_user'] ?? 'admin', $user);
     $validPassword = false;
@@ -19,19 +25,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($validUser && $validPassword) {
-        $duration = $remember ? time() + (60 * 60 * 24 * 30) : 0;
-
-        setcookie(
-            'kb_admin_login',
-            hash('sha256', 'kb-events-admin'),
-            [
-                'expires' => $duration,
-                'path' => '/admin',
-                'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
-                'httponly' => true,
-                'samesite' => 'Lax'
-            ]
-        );
+        start_admin_session();
+        session_regenerate_id(true);
+        $_SESSION['csrf'] = bin2hex(random_bytes(32));
+        $_SESSION['admin_fingerprint'] = auth_fingerprint($config);
+        $_SESSION['admin_expires'] = time() + 8 * 3600;
+        $tokens = load_json('remember.json', []);
+        $old = $_COOKIE['vcard_remember'] ?? '';
+        if (is_string($old)) unset($tokens[hash('sha256', $old)]);
+        $tokens = array_filter($tokens, static fn($entry) => ($entry['expires'] ?? 0) > time());
+        if ($remember) {
+            $token = bin2hex(random_bytes(32));
+            $expires = time() + 30 * 86400;
+            $tokens[hash('sha256', $token)] = ['expires' => $expires, 'fingerprint' => auth_fingerprint($config)];
+            remember_cookie($token, $expires);
+        } else remember_cookie('', time() - 3600);
+        save_json('remember.json', $tokens);
 
         header('Location: /admin');
         exit;
@@ -75,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="alert alert-danger"><?= h($error) ?></div>
                 <?php endif; ?>
 
-                <form method="post">
+                <form method="post"><?= csrf_field() ?>
 
                     <div class="mb-3">
                         <label class="form-label"><?= h(admin_t('username', $config)) ?></label>

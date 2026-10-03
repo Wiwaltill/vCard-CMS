@@ -1,6 +1,6 @@
 <?php
 
-require_once '../includes/functions.php';
+require_once __DIR__ . '/../includes/functions.php';
 require_installed();
 require_login();
 
@@ -112,7 +112,7 @@ $success = isset($_GET['saved']);
 $config = get_config();
 $types = data_types($config);
 
-include '../includes/header.php';
+include __DIR__ . '/../includes/header.php';
 
 ?>
 
@@ -133,7 +133,7 @@ include '../includes/header.php';
 
     <div class="card-body">
 
-        <form method="post">
+        <form method="post"><?= csrf_field() ?>
             <input type="hidden" name="action" value="save">
 
             <div class="table-responsive">
@@ -210,7 +210,7 @@ include '../includes/header.php';
     <div class="card-header"><?= h(admin_t('add_datatype', $config)) ?></div>
 
     <div class="card-body">
-        <form method="post">
+        <form method="post"><?= csrf_field() ?>
             <input type="hidden" name="action" value="add">
 
             <div class="row">
@@ -309,4 +309,4 @@ include '../includes/header.php';
         syncOrder();
     });
 </script>
-<?php include '../includes/footer.php'; ?>
+<?php include __DIR__ . '/../includes/footer.php'; ?>

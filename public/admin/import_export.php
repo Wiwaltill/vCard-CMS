@@ -1,5 +1,5 @@
 <?php
-require_once '../includes/functions.php';
+require_once __DIR__ . '/../includes/functions.php';
 require_installed();
 require_login();
 $config = get_config();
@@ -17,6 +17,10 @@ if (isset($_GET['export'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_FILES['csv']['tmp_name'])) {
+    if ($_FILES['csv']['error'] !== UPLOAD_ERR_OK || filesize($_FILES['csv']['tmp_name']) > 5 * 1024 * 1024) {
+        http_response_code(422);
+        exit('Invalid CSV upload (maximum 5 MB).');
+    }
     $fh = fopen($_FILES['csv']['tmp_name'], 'r');
     $header = fgetcsv($fh, 0, ';');
     $contacts = load_json('contacts.json', []);
@@ -25,6 +29,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_FILES['csv']['tmp_name']))
     $count = 0;
     if ($header) {
         while (($values = fgetcsv($fh, 0, ';')) !== false) {
+            if (count($values) > count($header)) {
+                http_response_code(422);
+                exit('CSV row contains too many columns.');
+            }
             $row = array_combine($header, array_pad($values, count($header), ''));
             if (!$row) continue;
             $id = trim($row['id'] ?? '');
@@ -38,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_FILES['csv']['tmp_name']))
     save_contacts($contacts);
     $message = $count . ' ' . admin_t('imported_contacts', $config);
 }
-include '../includes/header.php';
+include __DIR__ . '/../includes/header.php';
 ?>
 <h1 class="mb-4"><?= h(admin_t('csv_import_export', $config)) ?></h1>
 <?php if ($message): ?><div class="alert alert-success"><?= h($message) ?></div><?php endif; ?>
@@ -50,11 +58,11 @@ include '../includes/header.php';
 <div class="card shadow-sm">
     <div class="card-header"><?= h(admin_t('import_csv', $config)) ?></div>
     <div class="card-body">
-        <form method="post" enctype="multipart/form-data">
+        <form method="post" enctype="multipart/form-data"><?= csrf_field() ?>
             <input type="file" name="csv" accept=".csv,text/csv" class="form-control mb-3" required>
             <p class="text-body-secondary small"><?= h(admin_t('csv_import_help', $config)) ?></p>
             <button class="btn btn-success"><i class="bi bi-upload"></i> <?= h(admin_t('start_import', $config)) ?></button>
         </form>
     </div>
 </div>
-<?php include '../includes/footer.php'; ?>
+<?php include __DIR__ . '/../includes/footer.php'; ?>

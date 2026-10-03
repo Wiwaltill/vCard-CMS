@@ -1,5 +1,5 @@
 <?php
-require_once 'includes/functions.php';
+require_once __DIR__ . '/includes/functions.php';
 $config = get_config();
 header('Content-Type: application/manifest+json; charset=utf-8');
 $theme = $config['company_color'] ?? '#0d6efd';

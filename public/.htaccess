@@ -19,8 +19,8 @@ RewriteRule ^manifest.webmanifest$ manifest.php [L,QSA]
 RewriteRule ^sw.js$ sw.php [L,QSA]
 RewriteRule ^qr/([a-z0-9]{2,20})/(png|svg)$ qr.php?id=$1&format=$2 [L,QSA]
 
-RewriteRule ^([a-z0-9]{2,6})$ card.php?id=$1 [L,QSA]
-RewriteRule ^([a-z0-9]{2,6})/vcard$ vcard.php?id=$1 [L,QSA]
+RewriteRule ^([a-z0-9]{2,20})$ card.php?id=$1 [L,QSA]
+RewriteRule ^([a-z0-9]{2,20})/vcard$ vcard.php?id=$1 [L,QSA]
 
 # Fallback für unbekannte URLs.
 RewriteCond %{REQUEST_FILENAME} !-f

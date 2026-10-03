@@ -1,6 +1,6 @@
 <?php
 
-require_once '../includes/functions.php';
+require_once __DIR__ . '/../includes/functions.php';
 require_installed();
 require_login();
 
@@ -23,6 +23,8 @@ if (!$current) {
     http_response_code(404);
     exit(admin_t('not_found', $config));
 }
+
+$current = array_replace(['vorname' => '', 'nachname' => '', 'position' => '', 'bild' => '', 'fields' => []], $current);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
@@ -81,13 +83,13 @@ $emailOverride = !empty($current['email_override']);
 $autoEmail = generate_email($current['vorname'], $current['nachname'], $config);
 $currentEmail = contact_email($current, $config);
 
-include '../includes/header.php';
+include __DIR__ . '/../includes/header.php';
 
 ?>
 
 <h1 class="mb-4"><?= h(admin_t('edit_contact', $config)) ?></h1>
 
-<form method="post" enctype="multipart/form-data">
+<form method="post" enctype="multipart/form-data"><?= csrf_field() ?>
 
     <div class="row">
         <div class="col-md-6 mb-3">
@@ -192,4 +194,4 @@ include '../includes/header.php';
     toggleEmailField();
 </script>
 
-<?php include '../includes/footer.php'; ?>
+<?php include __DIR__ . '/../includes/footer.php'; ?>

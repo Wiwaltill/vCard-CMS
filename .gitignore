@@ -20,3 +20,12 @@ Thumbs.db
 # Backups
 /data/*.bak
 /data/backups/
+
+# Private authentication state and storage locks
+/data/remember.json
+/data/.storage.lock
+/data/.json-*
+!/public/uploads/.htaccess
+
+/tests/__pycache__/
+/data/.restore-*

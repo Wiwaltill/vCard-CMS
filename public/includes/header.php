@@ -133,9 +133,10 @@ $config = get_config();
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link" href="/admin/logout">
-                            <i class="bi bi-box-arrow-right"></i> <?= h(admin_t('logout', $config)) ?>
-                        </a>
+                        <form method="post" action="/admin/logout">
+                            <?= csrf_field() ?>
+                            <button class="nav-link border-0 bg-transparent" type="submit"><i class="bi bi-box-arrow-right"></i> <?= h(admin_t('logout', $config)) ?></button>
+                        </form>
                     </li>
 
                     <li class="nav-item dropdown ms-lg-2">

@@ -1,5 +1,5 @@
 <?php
-require_once 'includes/functions.php';
+require_once __DIR__ . '/includes/functions.php';
 require_installed();
 $contacts = load_json('contacts.json', []);
 $id = $_GET['id'] ?? '';

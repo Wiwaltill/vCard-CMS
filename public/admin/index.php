@@ -1,13 +1,13 @@
 <?php
 
-require_once '../includes/functions.php';
+require_once __DIR__ . '/../includes/functions.php';
 require_installed();
 require_login();
 
 $config = get_config();
 $contacts = load_contacts();
 
-include '../includes/header.php';
+include __DIR__ . '/../includes/header.php';
 
 ?>
 
@@ -94,9 +94,11 @@ include '../includes/header.php';
                                         <?= h(admin_t('cancel', $config)) ?>
                                     </button>
 
-                                    <a href="/admin/delete?id=<?= h($contact['id']) ?>" class="btn btn-danger">
-                                        <?= h(admin_t('delete', $config)) ?>
-                                    </a>
+                                    <form method="post" action="/admin/delete">
+                                        <?= csrf_field() ?>
+                                        <input type="hidden" name="id" value="<?= h($contact['id']) ?>">
+                                        <button class="btn btn-danger"><?= h(admin_t('delete', $config)) ?></button>
+                                    </form>
 
                                 </div>
 
@@ -116,4 +118,4 @@ include '../includes/header.php';
 
 </table>
 
-<?php include '../includes/footer.php'; ?>
+<?php include __DIR__ . '/../includes/footer.php'; ?>

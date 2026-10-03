@@ -1,6 +1,6 @@
 <?php
 
-require_once 'includes/functions.php';
+require_once __DIR__ . '/includes/functions.php';
 
 if (!is_installed()) {
     header('Location: /install', true, 302);
@@ -20,5 +20,5 @@ if ($requestPath === '') {
     }
 }
 
-require 'contact-not-found.php';
+require __DIR__ . '/contact-not-found.php';
 exit;

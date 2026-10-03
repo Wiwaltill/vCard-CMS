@@ -1,6 +1,6 @@
 <?php
 
-require_once '../includes/functions.php';
+require_once __DIR__ . '/../includes/functions.php';
 require_installed();
 require_login();
 
@@ -28,6 +28,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $config['pwa_enabled'] = isset($_POST['pwa_enabled']);
 
     if (!empty($_POST['admin_password'])) {
+        if (!is_string($_POST['admin_password']) || strlen($_POST['admin_password']) < 8) {
+            http_response_code(422);
+            exit('Password must contain at least 8 characters.');
+        }
         $config['admin_password_hash'] = password_hash($_POST['admin_password'], PASSWORD_DEFAULT);
     }
 
@@ -36,28 +40,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $config['company_logo'] = '';
     }
 
-    if (!empty($_FILES['company_logo']['name']) && is_uploaded_file($_FILES['company_logo']['tmp_name'])) {
-        $extension = strtolower(pathinfo($_FILES['company_logo']['name'], PATHINFO_EXTENSION));
-        $allowed = ['png', 'jpg', 'jpeg', 'svg', 'webp'];
-
-        if (in_array($extension, $allowed, true)) {
-            if (!empty($config['company_logo'])) {
-                delete_public_file($config['company_logo']);
-            }
-
-            $filename = 'logo-' . time() . '.' . $extension;
-            $target = __DIR__ . '/../uploads/' . $filename;
-
-            move_uploaded_file($_FILES['company_logo']['tmp_name'], $target);
-            $config['company_logo'] = '/uploads/' . $filename;
-        }
+    $logo = upload_image('company_logo', 'logo');
+    if ($logo !== '') {
+        delete_public_file($config['company_logo'] ?? '');
+        $config['company_logo'] = $logo;
     }
 
     save_json('config.json', $config);
+    $_SESSION['admin_fingerprint'] = auth_fingerprint($config);
     $success = true;
 }
 
-include '../includes/header.php';
+include __DIR__ . '/../includes/header.php';
 
 ?>
 
@@ -67,7 +61,7 @@ include '../includes/header.php';
     <div class="alert alert-success"><?= h(admin_t('saved', $config)) ?></div>
 <?php endif; ?>
 
-<form method="post" enctype="multipart/form-data">
+<form method="post" enctype="multipart/form-data"><?= csrf_field() ?>
 
     <div class="card bg-white shadow-sm mb-4">
         <div class="card-header"><?= h(admin_t('company_data', $config)) ?></div>
@@ -97,7 +91,7 @@ include '../includes/header.php';
                     </div>
                 <?php endif; ?>
 
-                <input type="file" name="company_logo" class="form-control" accept=".png,.jpg,.jpeg,.svg,.webp">
+                <input type="file" name="company_logo" class="form-control" accept=".png,.jpg,.jpeg,.webp">
                 <div class="form-text"><?= h(admin_t('logo_replace', $config)) ?></div>
             </div>
 
@@ -229,4 +223,4 @@ include '../includes/header.php';
 
 </form>
 
-<?php include '../includes/footer.php'; ?>
+<?php include __DIR__ . '/../includes/footer.php'; ?>

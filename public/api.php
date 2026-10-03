@@ -1,7 +1,9 @@
 <?php
-require_once 'includes/functions.php';
+require_once __DIR__ . '/includes/functions.php';
 require_installed();
 $config = get_config();
+header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-store');
 if (empty($config['api_enabled'])) {
     http_response_code(403);
     echo json_encode(['error' => 'api disabled']);
@@ -18,9 +20,27 @@ $find = function ($id) use (&$contacts) {
     return null;
 };
 $input = function () {
-    $raw = file_get_contents('php://input');
-    $d = json_decode($raw, true);
-    return is_array($d) ? $d : $_POST;
+    if ((int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 1024 * 1024) {
+        http_response_code(413);
+        exit(json_encode(['error' => 'request too large']));
+    }
+    $raw = file_get_contents('php://input', false, null, 0, 1024 * 1024 + 1);
+    if ($raw === false || strlen($raw) > 1024 * 1024) {
+        http_response_code(413);
+        exit(json_encode(['error' => 'request too large']));
+    }
+    try {
+        $data = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
+        if (!is_array($data) || substr(ltrim($raw), 0, 1) !== '{') throw new InvalidArgumentException();
+    } catch (Throwable $error) {
+        http_response_code(400);
+        exit(json_encode(['error' => 'expected JSON object']));
+    }
+    if (!valid_backup_contacts([array_replace($data, ['id' => $data['id'] ?? 'xx'])])) {
+        http_response_code(422);
+        exit(json_encode(['error' => 'invalid contact fields or id']));
+    }
+    return $data;
 };
 
 if ($method === 'GET' && !$id) {
@@ -36,8 +56,13 @@ if ($method === 'GET' && $id) {
     exit;
 }
 if ($method === 'POST') {
-    $data = $input();
+    $data = array_replace(['vorname' => '', 'nachname' => '', 'telefon' => '',
+        'email' => '', 'email_override' => false, 'position' => '', 'bild' => '', 'fields' => []], $input());
     $data['id'] = $data['id'] ?? make_contact_id($data['vorname'] ?? '', $data['nachname'] ?? '', $contacts);
+    if ($find($data['id']) !== null) {
+        http_response_code(409);
+        exit(json_encode(['error' => 'id already exists']));
+    }
     $contacts[] = $data;
     save_contacts($contacts);
     http_response_code(201);
@@ -70,5 +95,6 @@ if ($method === 'DELETE' && $id) {
     echo json_encode(['deleted' => $id]);
     exit;
 }
+header('Allow: GET, POST, PUT, DELETE');
 http_response_code(405);
 echo json_encode(['error' => 'method not allowed']);
