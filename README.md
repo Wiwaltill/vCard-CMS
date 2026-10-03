@@ -1,193 +1,169 @@
 # Digital vCard CMS
-[![Wiwaltill - vCard-CMS](https://img.shields.io/static/v1?label=Wiwaltill&message=vCard-CMS&color=blue&logo=github)](https://github.com/Wiwaltill/vCard-CMS "Go to GitHub repo")
-[![stars - vCard-CMS](https://img.shields.io/github/stars/Wiwaltill/vCard-CMS?style=social)](https://github.com/Wiwaltill/vCard-CMS)
-[![forks - vCard-CMS](https://img.shields.io/github/forks/Wiwaltill/vCard-CMS?style=social)](https://github.com/Wiwaltill/vCard-CMS)
 
-[![GitHub release](https://img.shields.io/github/v/release/Wiwaltill/vCard-CMS)](https://github.com/Wiwaltill/vCard-CMS/releases/)
-[![License](https://img.shields.io/github/license/Wiwaltill/vCard-CMS)](https://github.com/Wiwaltill/vCard-CMS/blob/main/LICENSE)
+**Digitale Visitenkarten für dein Team – mit eigenem Branding und ohne Datenbank.**
 
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Wiwaltill/vCard-CMS/ftp-upload.yml)
-[<img alt="Deployed with FTP Deploy Action" src="https://img.shields.io/badge/Deployed With-FTP DEPLOY ACTION-%3CCOLOR%3E">](https://github.com/SamKirkland/FTP-Deploy-Action)
-[![issues - vCard-CMS](https://img.shields.io/github/issues/Wiwaltill/vCard-CMS)](https://github.com/Wiwaltill/vCard-CMS/issues)
+Ein kleines PHP-CMS mit Adminbereich, Kontaktkarten, vCard-Downloads und QR-Codes. Kontakte und Einstellungen werden als JSON gespeichert; die Einrichtung erfolgt über einen Installationsassistenten.
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![GitHub release](https://img.shields.io/github/v/release/Wiwaltill/vCard-CMS)](https://github.com/Wiwaltill/vCard-CMS/releases)
 
-Modernes PHP vCard CMS zur Erstellung digitaler Visitenkarten mit Adminbereich, Mehrsprachigkeit, REST API, PWA und Theme-System. Optimiert für einfache Installation ohne Datenbank.
+[Installation](#installation) · [Verwendung](#verwendung) · [REST API](#rest-api) · [Backups & Updates](#backups--updates) · [Betrieb & bekannte-grenzen](#betrieb--bekannte-grenzen)
 
----
+> **Aktueller Sicherheitshinweis:** Die Admin-Anmeldung verwendet derzeit einen statischen, berechenbaren Cookie-Wert. Vor einem öffentlich erreichbaren Betrieb muss die Anmeldung abgesichert werden. Weitere offene Punkte stehen unter [Betrieb & bekannte Grenzen](#betrieb--bekannte-grenzen).
 
-# Funktionen
+## Funktionen
 
-## Kontaktkarten
+| Bereich | Möglichkeiten |
+| --- | --- |
+| Kontaktkarten | Responsive Karten, Profilbilder, Position und konfigurierbare Kontaktfelder |
+| Teilen | Download als `.vcf`, QR-Code-Anzeige und QR-Downloads als PNG oder SVG |
+| Branding | Firmenname, Logo, Akzentfarbe und Links zu Impressum und Datenschutz |
+| Darstellung | Themes **Classic**, **Minimal** und **Glass**; heller, dunkler oder systemabhängiger Modus |
+| Sprache | Deutsch und Englisch, automatische Browser-Erkennung und Sprachwahl auf Kontaktkarten |
+| Verwaltung | Kontakte anlegen und bearbeiten, eigene Datentypen und deren Reihenfolge konfigurieren |
+| Datenaustausch | CSV-Import und -Export sowie REST API zum Lesen und Schreiben von Kontakten |
+| Datensicherung | ZIP-Backups mit Konfiguration, Kontakten und Uploads; Download und Wiederherstellung im Adminbereich |
+| PWA | Web-App-Manifest und Service Worker zum Hinzufügen auf den Homescreen; Unterstützung abhängig von Browser und Gerät |
 
-- Digitale vCards erstellen
-- Eigene Profilbilder & Coverbilder
-- Kontaktinformationen verwalten
-- Social Media Links
-- Telefon, Mail, Webseite
-- Standort & Google Maps
-- Download als `.vcf`
-- QR-Code Anzeige
-- Responsive Darstellung für Mobilgeräte
+## Installation
 
-## Mehrsprachigkeit
+### Voraussetzungen
 
-- Deutsch & Englisch
-- Automatische Browser-Erkennung
-- Sprachumschaltung im Frontend & Adminbereich
+- PHP **8.0 oder neuer**; für den Betrieb eine gepflegte PHP-Version einsetzen.
+- Apache mit `mod_rewrite` und erlaubten `.htaccess`-Regeln, beispielsweise `AllowOverride All` für `public/`.
+- PHP-Erweiterung **ZipArchive** für Backup und Restore.
+- Schreibzugriff des PHP-Prozesses auf `data/` und `public/uploads/`.
+- HTTPS für den produktiven Betrieb und die Service-Worker-Funktion.
 
-## Themes & Darstellung
+Es sind weder eine Datenbank noch ein Node.js-Build oder eine Composer-Installation erforderlich. Für serverseitige QR-Downloads wird ausgehender HTTPS-Zugriff über `file_get_contents` benötigt (`allow_url_fopen`); bei einem Fehler erfolgt eine Weiterleitung zum QR-Dienst.
 
-- Classic Theme
-- Glass Theme
-- Light Mode
-- Dark Mode
-- Auto-Modus nach Systemeinstellung
+### 1. Projekt bereitstellen
 
-## PWA / Homescreen
+```bash
+git clone https://github.com/Wiwaltill/vCard-CMS.git
+cd vCard-CMS
+```
 
-- Als App installierbar
-- „Zum Homescreen hinzufügen“
-- Kontaktkarten starten direkt in der jeweiligen Karte
-- Android & iPhone kompatibel
+Alternativ das Repository herunterladen und auf den Server kopieren. Auch versteckte Dateien wie `public/.htaccess` müssen mit übertragen werden.
 
-## QR-Code Funktionen
+### 2. Webroot konfigurieren
 
-- QR-Code Anzeige
-- Download als PNG
-- Download als SVG
+Den **DocumentRoot auf `public/`** setzen. `data/` liegt außerhalb des öffentlich erreichbaren Verzeichnisses und enthält später auch Passwort-Hash und API-Token.
 
-## Adminbereich
+```text
+vCard-CMS/
+├── data/                    # Private Konfiguration und Kontakte
+│   ├── config.sample.json
+│   ├── contacts.sample.json
+│   └── backups/             # Wird bei der ersten Sicherung angelegt
+├── public/                  # DocumentRoot des Webservers
+│   ├── .htaccess            # URL-Rewriting
+│   ├── admin/               # Verwaltung
+│   ├── assets/              # Statische Assets
+│   ├── includes/            # Gemeinsame PHP-Funktionen und Layout
+│   ├── uploads/             # Öffentlich erreichbare Bilder
+│   ├── api.php
+│   ├── card.php
+│   └── install.php
+└── README.md
+```
 
-- Kontaktkarten verwalten
-- Datentypen verwalten
-- Drag & Drop Sortierung
-- Theme Auswahl
-- Spracheinstellungen
-- Darkmode Umschaltung
-- API Verwaltung
-- Backup & Restore
+Die Anwendung verwendet absolute URL-Pfade wie `/admin` und `/uploads`. Für die Installation eine eigene Domain oder Subdomain verwenden; Unterverzeichnis-Hosting benötigt Anpassungen am Code und am Routing.
 
-## CSV Funktionen
+### 3. Schreibrechte einrichten
 
-- CSV Import
-- CSV Export
-- Kontakte schnell importieren/exportieren
+`data/` und `public/uploads/` für den PHP-Prozess beschreibbar machen. `data/backups/` wird automatisch angelegt. Eigentümer und Rechte passend zum Hosting einrichten; pauschale `777`-Rechte sind nicht erforderlich.
+
+### 4. Assistent aufrufen
+
+`https://deine-domain.de/install` öffnen und Firmenangaben, E-Mail-Konfiguration sowie einen eigenen Admin-Benutzernamen und ein Passwort festlegen. Der Assistent verlangt mindestens acht Passwortzeichen und startet mit einer leeren Kontaktliste.
+
+**Es gibt keinen vorgesehenen Standard-Login nach der Installation.** Anschließend mit den selbst vergebenen Zugangsdaten unter `/admin/login` anmelden.
+
+## Verwendung
+
+1. Unter `/admin` einen Kontakt anlegen und Kontaktinformationen sowie ein Profilbild hinterlegen.
+2. Unter `/admin/datatypes` weitere Felder und ihre Reihenfolge konfigurieren.
+3. Unter `/admin/settings` Branding, Sprache, Theme und Darstellung einstellen.
+4. Die Kontaktkarte über ihre ID teilen oder den QR-Code herunterladen.
+
+| URL | Zweck |
+| --- | --- |
+| `/admin` | Kontaktverwaltung |
+| `/{id}` | Öffentliche Kontaktkarte |
+| `/{id}/vcard` | Kontakt als `.vcf` herunterladen |
+| `/qr/{id}/png` | QR-Code als PNG herunterladen |
+| `/qr/{id}/svg` | QR-Code als SVG herunterladen |
+| `/admin/import_export` | CSV-Import und -Export |
+| `/admin/backup` | ZIP-Backups verwalten |
+| `/admin/api` | API aktivieren und Token neu erzeugen |
+
+Die Startseite `/` leitet nach der Installation an die konfigurierte Ziel-URL weiter, sofern eine hinterlegt ist. Sie zeigt keine öffentliche Kontaktliste.
+
+### CSV-Import
+
+Am besten zunächst einen CSV-Export als Vorlage herunterladen. Das Trennzeichen ist ein **Semikolon**; die Spalten umfassen auch die konfigurierten Datentypen. Vorhandene Kontakte werden anhand der Spalte `id` aktualisiert. Vor größeren Importen ein Backup erstellen.
 
 ## REST API
 
-- JSON API
-- Token-Authentifizierung
-- Kontakte abrufen
-- Kontaktinformationen ausgeben
+Die API lässt sich unter `/admin/api` aktivieren. Dort vor der ersten Verwendung einen eigenen Token über **„Token neu erzeugen“** erstellen; die Beispielkonfiguration enthält einen bekannten Platzhalter.
 
-Authentifizierung:
-
-```http
-X-API-Token: DEIN_API_TOKEN
-```
-
-Beispiel:
+Den Token über den Header `X-API-Token` übergeben:
 
 ```bash
-curl -H "X-API-Token: DEIN_API_TOKEN" \
-https://deine-domain.de/api/contacts
+curl --header "X-API-Token: DEIN_API_TOKEN" \
+  https://deine-domain.de/api/contacts
 ```
 
-## Backup & Restore
+| Methode | Endpoint | Funktion |
+| --- | --- | --- |
+| `GET` | `/api/contacts` | Alle Kontakte abrufen |
+| `GET` | `/api/contacts/{id}` | Einzelnen Kontakt abrufen |
+| `POST` | `/api/contacts` | Kontakt erstellen |
+| `PUT` | `/api/contacts/{id}` | Kontaktfelder aktualisieren |
+| `DELETE` | `/api/contacts/{id}` | Kontakt löschen |
 
-- Backups direkt im Adminbereich erstellen
-- Restore per Upload
-- JSON-basierte Datensicherung
+Beispiel zum Anlegen eines Kontakts:
 
----
-
-# Voraussetzungen
-
-- PHP 8.0 oder höher
-- Apache Webserver
-- `mod_rewrite` aktiviert
-- Beschreibbares `/data` Verzeichnis
-
----
-
-# Installation
-
-## 1. Dateien hochladen
-
-Projekt auf den Webserver kopieren.
-
-## 2. Schreibrechte setzen
-
-Folgende Ordner müssen beschreibbar sein:
-
-```txt
-/data
-/backups
-/uploads
+```bash
+curl --request POST \
+  --header "X-API-Token: DEIN_API_TOKEN" \
+  --header "Content-Type: application/json" \
+  --data '{"vorname":"Erika","nachname":"Mustermann","position":"Design"}' \
+  https://deine-domain.de/api/contacts
 ```
 
-## 3. Webseite öffnen
+Ohne `id` erzeugt die Anwendung eine ID. `PUT` führt übergebene Felder mit dem bestehenden Kontakt zusammen. Die API antwortet mit JSON; typische Statuscodes sind `201` beim Anlegen, `401` bei ungültigem Token, `403` bei deaktivierter API und `404` bei unbekanntem Kontakt.
 
-CMS im Browser aufrufen.
+Die öffentliche Kartenroute akzeptiert derzeit IDs aus zwei bis sechs Kleinbuchstaben oder Ziffern. Bei selbst vergebenen IDs diese Grenze berücksichtigen; die API-Einzelroute erlaubt bis zu 20 Zeichen.
 
-## 4. Admin Login
+## Backups & Updates
 
-Standard Zugang:
+Unter `/admin/backup` ZIP-Sicherungen erstellen, herunterladen und wiederherstellen. Eine Sicherung enthält:
 
-```txt
-Benutzername: admin
-Passwort: admin
-```
+- `data/config.json` einschließlich Zugangskonfiguration und API-Token
+- `data/contacts.json`
+- Dateien aus `public/uploads/`
 
-Passwort anschließend ändern.
+Die ZIP-Dateien werden zusätzlich unter `data/backups/` gespeichert. Sicherungen vertraulich behandeln und eine Kopie außerhalb des Webservers aufbewahren. Beim Restore werden enthaltene Konfiguration, Kontakte und gleichnamige Uploads überschrieben; zusätzliche bestehende Uploads werden nicht entfernt.
 
----
+Vor Updates ein Backup herunterladen. Beim Austausch der Programmdateien **`data/config.json`, `data/contacts.json`, `data/backups/` und `public/uploads/` erhalten**. Neue Konfigurationsschlüssel werden anhand von `config.sample.json` ergänzt.
 
-# Projektstruktur
+## Betrieb & bekannte Grenzen
 
-```txt
-/admin          → Adminbereich
-/api            → REST API
-/assets         → CSS, JS, Bilder
-/data           → Kontakte & Einstellungen
-/themes         → Themes
-/uploads        → Uploads
-/backups        → Backups
-```
+Die aktuelle Implementierung hat offene Punkte, die vor einem öffentlichen Betrieb behoben werden sollten:
 
----
+- **Admin-Authentifizierung:** Der Login-Cookie ist statisch und lässt sich ohne Passwort berechnen. Serverseitige Sessions und separate zufällige Tokens für dauerhafte Anmeldungen sind erforderlich.
+- **Schreibaktionen:** CSRF-Schutz fehlt im Adminbereich; Kontaktlöschung ist derzeit per GET möglich.
+- **API-Token:** Der bekannte Platzhalter aus der Beispielkonfiguration wird bei der Installation nicht automatisch ersetzt. Einen eigenen Token erzeugen oder die API deaktivieren.
+- **Uploads und Restore:** Bilder werden anhand ihrer Dateiendung geprüft, SVG ist zugelassen. MIME-/Inhaltsprüfung, Größenlimits und die Validierung von Backup-Inhalten fehlen.
+- **Offline-Cache:** Der Service Worker speichert derzeit GET-Antworten auch für Admin- und API-Aufrufe. Den Cache auf geeignete öffentliche Ressourcen begrenzen.
+- **JSON-Speicherung:** Schreibvorgänge erfolgen ohne Dateisperre, atomaren Austausch oder Fehlerprüfung. Gleichzeitige Änderungen können Daten verlieren; das Projekt eignet sich daher vorerst für kleine Installationen mit wenigen Schreibzugriffen.
 
-# Themes
+Bootstrap und Bootstrap Icons werden über jsDelivr geladen. QR-Codes werden durch `api.qrserver.com` erzeugt; dabei wird die URL der Kontaktkarte an diesen Dienst übertragen. Für einen Betrieb ohne diese externen Abhängigkeiten Assets lokal ausliefern und QR-Codes lokal erzeugen.
 
-## Classic
+## Mitwirken & Lizenz
 
-Klassisches Bootstrap Layout.
+Fehler und Verbesserungsvorschläge können über die [GitHub Issues](https://github.com/Wiwaltill/vCard-CMS/issues) gemeldet werden. Hinweise zur Mitarbeit stehen in [CONTRIBUTING.md](CONTRIBUTING.md), die Community-Regeln in [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
-## Minimal
-
-Minimale Fassung vom Bootstrap Layout.
-
-## Glass
-
-Moderne Glasoptik mit Blur-Effekten und Transparenz.
-
----
-
-# Darkmode
-
-Unterstützt drei Modi:
-
-- Hell
-- Dunkel
-- Auto (Systemeinstellung)
-
-Basierend auf Bootstrap 5.3 `data-bs-theme`.
-
----
-
-# Sicherheit
-
-- Passwortgeschützter Adminbereich
-- API Token Schutz
-- JSON-basierte Datenspeicherung
-- Keine Datenbank notwendig
+Das Projekt steht unter der [MIT-Lizenz](LICENSE).
