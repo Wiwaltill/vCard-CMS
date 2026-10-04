@@ -18,7 +18,7 @@ $contacts = trashed_contacts();
 include __DIR__ . '/../includes/header.php';
 ?>
 <h1><?= h(maintenance_t('Papierkorb', 'Trash')) ?></h1>
-<p><?= h(maintenance_t('Gelöschte Kontakte sind öffentlich nicht erreichbar. Beim Wiederherstellen bleiben ID, Link und Foto erhalten. Es gibt keine automatische Löschung.', 'Deleted contacts are not publicly accessible. Restoring preserves the ID, link and photo. There is no automatic deletion.')) ?></p>
+<p><?= h(maintenance_t('Gelöschte Kontakte sind öffentlich nicht erreichbar. Beim Wiederherstellen bleiben ID, Link und Foto erhalten. Es gibt keine automatische Löschung. Nach endgültiger Löschung bleibt nur die ID reserviert, damit alte QR-Codes nicht auf andere Kontakte zeigen.', 'Deleted contacts are not publicly accessible. Restoring preserves the ID, link and photo. There is no automatic deletion. After permanent deletion, only the ID stays reserved so old QR codes cannot point to other contacts.')) ?></p>
 <?php if ($message): ?><div class="alert alert-info" role="status"><?= h($message) ?></div><?php endif; ?>
 <?php if (!$contacts): ?><p><?= h(maintenance_t('Der Papierkorb ist leer.', 'The trash is empty.')) ?></p><?php endif; ?>
 <?php foreach ($contacts as $contact): ?>

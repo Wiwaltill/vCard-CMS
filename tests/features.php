@@ -149,7 +149,8 @@ feature_check(restore_trashed_contact('bb') && restore_backup_zip($backup), 'Tra
 feature_check(count(trashed_contacts()) === 1 && !load_json('contacts.json', []), 'Backup lost trash status');
 $job = start_image_optimization();
 $changed = load_json_file_path(data_path('contacts.json'));
-$changed[0]['bild'] = '/uploads/missing.png';
+foreach ($changed as &$record) if ($record['id'] === 'bb') $record['bild'] = '/uploads/missing.png';
+unset($record);
 save_json('contacts.json', $changed);
 $job = step_image_optimization($job['id']);
 feature_check($job['report'][0]['status'] === 'skipped', 'Migration overwrote changed photo');
@@ -174,6 +175,43 @@ feature_check(skip_image_optimization('skip-test', 1)['done'] === 2, 'Skip did n
 feature_check(skip_image_optimization('skip-test', 2)['done'] === 2, 'Completed job advanced past end');
 feature_check(ini_bytes('128M') === 134217728 && ini_bytes('2G') === 2147483648, 'Server limit parser failed');
 feature_check(count(server_checks()) >= 15, 'Server check incomplete');
+// Printed QR targets must survive contact edits and must never change owners after purge.
+save_json('contacts.json', []);
+$withoutTargetBackup = make_backup_zip();
+$stable = ['id'=>'qr', 'vorname'=>'Quinn', 'nachname'=>'Roth'];
+save_contacts([$stable]);
+$printedUrl = contact_url($stable);
+$printedPng = qr_png(qr_matrix($printedUrl));
+$beforeDeletionBackup = make_backup_zip();
+$stable = contact_form_values(['vorname'=>'Neue', 'nachname'=>'Person', 'field_phone'=>'+491234'], $config, $stable);
+save_contacts([$stable]);
+feature_check(contact_url(load_contacts()[0]) === $printedUrl, 'Rename changed printed QR target');
+feature_check((new \chillerlan\QRCode\QRCode())->readFromBlob($printedPng)->data === $printedUrl, 'Previously printed QR no longer decodes');
+feature_check(trash_contact('qr') && !load_contacts(), 'Trashed QR target remains active');
+feature_check(make_contact_id('Quinn', 'Roth', []) !== 'qr', 'Trashed QR ID reused');
+feature_check(restore_trashed_contact('qr'), 'QR contact cannot be restored');
+feature_check(contact_url(load_contacts()[0]) === $printedUrl, 'Restored QR target changed');
+feature_check(trash_contact('qr') && purge_trashed_contact('qr'), 'QR contact purge failed');
+feature_check(!restore_trashed_contact('qr') && !trashed_contacts() && !load_contacts(), 'Purged QR contact remains visible or restorable');
+$records = reserved_contact_records();
+$retired = array_values(array_filter($records, static fn($record) => $record['id'] === 'qr'))[0];
+feature_check(array_keys($retired) === ['id', '_deleted_at', '_purged_at'], 'Purged contact retained personal data');
+feature_check(make_contact_id('Quinn', 'Roth', []) !== 'qr', 'Purged QR ID reused');
+try {
+    save_contacts([['id'=>'qr', 'vorname'=>'Different owner']]);
+    feature_check(false, 'Explicitly retired QR ID accepted');
+} catch (RuntimeException $error) {feature_check(true, 'Retired QR ID blocked');}
+save_contacts([['id'=>'qr2', 'vorname'=>'Quinn', 'nachname'=>'Roth']]);
+feature_check(in_array('qr', array_column(reserved_contact_records(), 'id'), true), 'Ordinary save lost retired QR ID');
+$afterDeletionBackup = make_backup_zip();
+feature_check(restore_backup_zip($afterDeletionBackup), 'Backup containing retired QR ID rejected');
+feature_check(make_contact_id('Quinn', 'Roth', load_contacts()) !== 'qr', 'Backup restore lost retired QR ID');
+// A backup without this target must not silently free the permanently deleted ID.
+save_contacts([]);
+feature_check(restore_backup_zip($withoutTargetBackup) && make_contact_id('Quinn', 'Roth', []) !== 'qr', 'Restore freed a retired QR target');
+// Explicit recovery of the original contact from its backup keeps its printed target.
+feature_check(restore_backup_zip($beforeDeletionBackup), 'Original QR contact backup restore failed');
+feature_check(contact_url(load_contacts()[0]) === $printedUrl, 'Backup recovery changed printed QR target');
 echo "OK: $checks feature checks passed.\n";
 } finally {
     feature_remove_tree($fixture);

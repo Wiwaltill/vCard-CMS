@@ -204,10 +204,10 @@ function load_contacts(): array
 
 function save_contacts(array $contacts): void
 {
-    $deleted = trashed_contacts();
+    $deleted = reserved_contact_records();
     $reserved = array_column($deleted, 'id');
     foreach ($contacts as $contact) {
-        if (in_array($contact['id'], $reserved, true)) throw new RuntimeException('Contact ID is reserved in the trash.');
+        if (in_array($contact['id'], $reserved, true)) throw new RuntimeException('Contact ID is reserved by a deleted contact.');
     }
     save_json('contacts.json', array_merge(array_values($contacts), $deleted));
 }
@@ -268,7 +268,7 @@ function make_contact_id(string $vorname, string $nachname, array $contacts, ?st
 
     $existingIds = array_map(function ($contact) {
         return $contact['id'] ?? '';
-    }, array_merge($contacts, trashed_contacts()));
+    }, array_merge($contacts, reserved_contact_records()));
 
     while (in_array($id, $existingIds, true) && $id !== $currentId) {
         $id = $base . $counter;
@@ -1214,6 +1214,11 @@ function restore_backup_zip(string $tmp): bool
         }
         if (!isset($json['config.json'], $json['contacts.json'])
             || !valid_backup_config($json['config.json']) || !valid_backup_contacts($json['contacts.json'])) return false;
+        // Keep previously retired QR targets absent from an older backup reserved.
+        $restoredIds = array_column($json['contacts.json'], 'id');
+        foreach (reserved_contact_records() as $record) {
+            if (!empty($record['_purged_at']) && !in_array($record['id'], $restoredIds, true)) $json['contacts.json'][] = $record;
+        }
         // Validate everything before modifying live data; preserve a rollback snapshot.
         if (make_backup_zip() === '') return false;
         foreach (['config.json', 'contacts.json', 'remember.json'] as $file) {
@@ -1265,9 +1270,15 @@ function restore_backup_zip(string $tmp): bool
     }
 }
 
-function trashed_contacts(): array
+// Minimal purged records reserve printed QR targets without retaining contact data.
+function reserved_contact_records(): array
 {
     return array_values(array_filter(load_json_file_path(data_path('contacts.json'), []), static fn($contact) => !empty($contact['_deleted_at'])));
+}
+
+function trashed_contacts(): array
+{
+    return array_values(array_filter(reserved_contact_records(), static fn($contact) => empty($contact['_purged_at'])));
 }
 
 function trash_contact(string $id): bool
@@ -1287,7 +1298,7 @@ function restore_trashed_contact(string $id): bool
 {
     $contacts = load_json_file_path(data_path('contacts.json'), []);
     foreach ($contacts as &$contact) {
-        if (($contact['id'] ?? '') === $id && !empty($contact['_deleted_at'])) {
+        if (($contact['id'] ?? '') === $id && !empty($contact['_deleted_at']) && empty($contact['_purged_at'])) {
             unset($contact['_deleted_at']);
             save_json('contacts.json', $contacts);
             return true;
@@ -1317,8 +1328,8 @@ function purge_trashed_contact(string $id): bool
 {
     $contacts = load_json_file_path(data_path('contacts.json'), []);
     foreach ($contacts as $key => $contact) {
-        if (($contact['id'] ?? '') === $id && !empty($contact['_deleted_at'])) {
-            unset($contacts[$key]);
+        if (($contact['id'] ?? '') === $id && !empty($contact['_deleted_at']) && empty($contact['_purged_at'])) {
+            $contacts[$key] = ['id' => $id, '_deleted_at' => $contact['_deleted_at'], '_purged_at' => gmdate('c')];
             save_json('contacts.json', array_values($contacts));
             remove_unreferenced_image($contact['bild'] ?? '');
             return true;

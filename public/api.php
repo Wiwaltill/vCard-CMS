@@ -60,7 +60,7 @@ if ($method === 'POST') {
     $data = array_replace(['vorname' => '', 'nachname' => '', 'telefon' => '',
         'email' => '', 'email_override' => false, 'position' => '', 'bild' => '', 'fields' => []], $input());
     $data['id'] = $data['id'] ?? make_contact_id($data['vorname'] ?? '', $data['nachname'] ?? '', $contacts);
-    if ($find($data['id']) !== null || in_array($data['id'], array_column(trashed_contacts(), 'id'), true)) {
+    if ($find($data['id']) !== null || in_array($data['id'], array_column(reserved_contact_records(), 'id'), true)) {
         http_response_code(409);
         exit(json_encode(['error' => 'id already exists']));
     }

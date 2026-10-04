@@ -11,8 +11,8 @@ if (isset($_GET['export'])) {
     header('Content-Disposition: attachment; filename="contacts.csv"');
     $out = fopen('php://output', 'w');
     $cols = csv_columns($config);
-    fputcsv($out, $cols, ';');
-    foreach ($contacts as $contact) fputcsv($out, array_values(contact_to_csv_row($contact, $config)), ';');
+    fputcsv($out, $cols, ';', '"', '\\');
+    foreach ($contacts as $contact) fputcsv($out, array_values(contact_to_csv_row($contact, $config)), ';', '"', '\\');
     exit;
 }
 
@@ -22,13 +22,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_FILES['csv']['tmp_name']))
         exit('Invalid CSV upload (maximum 5 MB).');
     }
     $fh = fopen($_FILES['csv']['tmp_name'], 'r');
-    $header = fgetcsv($fh, 0, ';');
+    $header = fgetcsv($fh, 0, ';', '"', '\\');
     $contacts = load_json('contacts.json', []);
     $byId = [];
     foreach ($contacts as $i => $c) if (!empty($c['id'])) $byId[$c['id']] = $i;
     $count = 0;
     if ($header) {
-        while (($values = fgetcsv($fh, 0, ';')) !== false) {
+        while (($values = fgetcsv($fh, 0, ';', '"', '\\')) !== false) {
             if (count($values) > count($header)) {
                 http_response_code(422);
                 exit('CSV row contains too many columns.');
@@ -36,9 +36,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_FILES['csv']['tmp_name']))
             $row = array_combine($header, array_pad($values, count($header), ''));
             if (!$row) continue;
             $id = trim($row['id'] ?? '');
-            if (in_array($id, array_column(trashed_contacts(), 'id'), true)) {
+            if (in_array($id, array_column(reserved_contact_records(), 'id'), true)) {
                 http_response_code(409);
-                exit('Contact ID is in the trash. Restore it before importing.');
+                exit('Contact ID is reserved by a deleted contact. Restore it from the trash or use a new ID.');
             }
             $existing = ($id !== '' && isset($byId[$id])) ? $contacts[$byId[$id]] : [];
             $contact = csv_row_to_contact($row, $config, $existing);

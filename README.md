@@ -122,6 +122,12 @@ Die Startseite `/` leitet nach der Installation an die konfigurierte Ziel-URL we
 
 Am besten zunächst einen CSV-Export als Vorlage herunterladen. Das Trennzeichen ist ein **Semikolon**; die Spalten umfassen auch die konfigurierten Datentypen. Vorhandene Kontakte werden anhand der Spalte `id` aktualisiert. Vor größeren Importen ein Backup erstellen.
 
+### Dauerhafte QR-Ziele
+
+Umbenennen und Bearbeiten verändern die Kontakt-ID nicht. Im Papierkorb liefern Karte und QR-Endpunkte `404`; beim Wiederherstellen funktionieren dieselben Links wieder. Nach endgültigem Löschen bleiben nur ID und Löschmarkierungen gespeichert. Diese ID wird weder automatisch noch per API oder CSV erneut vergeben; alte QR-Codes können dadurch nicht versehentlich auf andere Personen zeigen. ZIP-Backups enthalten die Reservierungen. Beim Einspielen älterer Backups bleiben vorhandene endgültig gelöschte IDs reserviert, sofern das Backup den ursprünglichen Kontakt nicht ausdrücklich wiederherstellt. Bereits vor diesem Update vollständig entfernte IDs lassen sich ohne alte Backups nicht nachträglich ermitteln.
+
+Gedruckte QR-Codes enthalten eine vollständige URL. Bei einem Domainwechsel muss die bisherige Domain weiter auf die entsprechenden Karten umleiten. Die Tests prüfen Umbenennen, Papierkorb, Wiederherstellen, endgültiges Löschen, ID-Reservierung und Backup-Wiederherstellung bei unveränderter Domain.
+
 ## REST API
 
 Die API lässt sich unter `/admin/api` aktivieren. Ein zufälliger Token wird bei der Installation erzeugt; leere Tokens und der bekannte Platzhalter aus älteren Installationen werden automatisch ersetzt. Über **„Token neu erzeugen“** lässt er sich jederzeit wechseln.
@@ -153,7 +159,7 @@ curl --request POST \
 
 Ohne `id` erzeugt die Anwendung eine ID. `PUT` führt übergebene Felder mit dem bestehenden Kontakt zusammen. Die API antwortet mit JSON; typische Statuscodes sind `201` beim Anlegen, `401` bei ungültigem Token, `403` bei deaktivierter API und `404` bei unbekanntem Kontakt.
 
-API und öffentliche Kartenrouten akzeptieren IDs aus zwei bis 20 Kleinbuchstaben oder Ziffern. Schreibanfragen erwarten ein JSON-Objekt mit höchstens 1 MB. Fehlerhaftes JSON liefert `400`, ungültige Felder oder IDs `422` und eine bereits vergebene oder im Papierkorb reservierte ID `409`. Die API bietet keine Aktion zum Leeren des Papierkorbs; Wiederherstellung und endgültiges Löschen erfolgen im Adminbereich. Tokens ausschließlich als Header übergeben; Tokens in der URL werden nicht akzeptiert.
+API und öffentliche Kartenrouten akzeptieren IDs aus zwei bis 20 Kleinbuchstaben oder Ziffern. Schreibanfragen erwarten ein JSON-Objekt mit höchstens 1 MB. Fehlerhaftes JSON liefert `400`, ungültige Felder oder IDs `422` und eine bereits vergebene oder durch einen gelöschten Kontakt reservierte ID `409`. Die API bietet keine Aktion zum Leeren des Papierkorbs; Wiederherstellung und endgültiges Löschen erfolgen im Adminbereich. Tokens ausschließlich als Header übergeben; Tokens in der URL werden nicht akzeptiert.
 
 ## Backups & Updates
 

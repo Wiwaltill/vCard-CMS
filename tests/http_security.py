@@ -134,6 +134,8 @@ with tempfile.TemporaryDirectory(prefix="vcard-http-") as temporary:
             parser = FormTokens()
             parser.feed(rendered)
             check(parser.forms and all(parser.forms), "Missing form CSRF field: " + page)
+        status, printed_svg, _ = request("/qr.php?id=ab&format=svg")
+        check(status == 200 and "<svg" in printed_svg, "Initial printed QR unavailable")
         before_preview = (fixture / "data/contacts.json").read_bytes()
         draft = {"preview_id": "ab", "vorname": "Erika", "nachname": "Beispiel", "csrf_token": token}
         status, rendered, preview_headers = request("/admin/preview.php", "POST", draft)
@@ -149,22 +151,41 @@ with tempfile.TemporaryDirectory(prefix="vcard-http-") as temporary:
         check(status == 200 and "Beispiel" in rendered, "Contact search failed")
         status, rendered, _ = request("/qr.php?id=ab&format=svg")
         check(status == 200 and "<svg" in rendered and "<path" in rendered, "Local SVG QR generation failed")
+        check(rendered == printed_svg, "Renaming changed the previously downloaded QR")
+        check(request("/card.php?id=ab")[0] == 200, "Printed QR target failed after rename")
         check(request("/admin/delete.php?id=ab")[0] == 405, "GET deletion accepted")
         check(request("/admin/delete.php", "POST", {"id": "ab"})[0] == 403, "Deletion without CSRF accepted")
         check(request("/admin/delete.php", "POST", {"id": "ab", "csrf_token": token})[0] == 302, "POST deletion failed")
         deleted = json.loads((fixture / "data/contacts.json").read_text())
         check(len(deleted) == 1 and deleted[0].get("_deleted_at"), "Contact not retained in trash")
         check(request("/card.php?id=ab")[0] == 404, "Trashed public card still accessible")
+        check(request("/qr.php?id=ab&format=svg")[0] == 404, "Trashed QR endpoint remains public")
+        check(request("/qr.php?id=ab&format=png")[0] == 404, "Trashed PNG endpoint remains public")
         check(request("/admin/trash.php")[0] == 200, "Trash page failed")
         check(request("/admin/trash.php", "POST", {"id": "ab", "action": "restore"})[0] == 403, "Trash restore without CSRF accepted")
         check(request("/admin/trash.php", "POST", {"id": "ab", "action": "restore", "csrf_token": token})[0] == 302, "Trash restore failed")
         restored = json.loads((fixture / "data/contacts.json").read_text())[0]
         check(restored["id"] == "ab" and not restored.get("_deleted_at"), "Restore changed contact ID")
         check(request("/card.php?id=ab")[0] == 200, "Restored public card inaccessible")
+        status, restored_svg, _ = request("/qr.php?id=ab&format=svg")
+        check(status == 200 and restored_svg == printed_svg, "Restore changed printed QR target")
         check(request("/admin/delete.php", "POST", {"id": "ab", "csrf_token": token})[0] == 302, "Second trash operation failed")
         check(request("/admin/maintenance.php")[0] == 200, "Image maintenance page failed")
         check(request("/admin/maintenance.php", "POST", {"action": "start"})[0] == 403, "Maintenance without CSRF accepted")
         auth = {"X-API-Token": config["api_token"], "Content-Type": "application/json"}
+        check(request("/admin/trash.php", "POST", {"id": "ab", "action": "purge", "csrf_token": token})[0] == 302, "QR contact permanent deletion failed")
+        check(request("/card.php?id=ab")[0] == 404 and request("/qr.php?id=ab&format=svg")[0] == 404, "Retired printed QR remains accessible")
+        check(request("/api.php", "POST", json.dumps({"id":"ab", "vorname":"Different", "nachname":"Owner"}), auth)[0] == 409, "API reused retired printed QR target")
+        boundary = "qr-retired-csv"
+        csv_body = (f"--{boundary}\r\nContent-Disposition: form-data; name=\"csrf_token\"\r\n\r\n{token}\r\n"
+                    f"--{boundary}\r\nContent-Disposition: form-data; name=\"csv\"; filename=\"contacts.csv\"\r\nContent-Type: text/csv\r\n\r\n"
+                    f"id;vorname;nachname\r\nab;Different;Owner\r\n--{boundary}--\r\n").encode()
+        check(request("/admin/import_export.php", "POST", csv_body, {"Content-Type": "multipart/form-data; boundary=" + boundary})[0] == 409, "CSV reused retired printed QR target")
+        status, csv_export, _ = request("/admin/import_export.php?export=1")
+        check(status == 200 and "ab;" not in csv_export and "Deprecated" not in csv_export, "CSV export leaked retired target or PHP warnings")
+
+
+
         status, body, headers = request("/api.php", headers=auth)
         check(status == 200 and body == "[]", "Contact deletion failed")
         check(headers.get("Cache-Control") == "no-store", "API response cacheable")
