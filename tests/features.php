@@ -1,5 +1,5 @@
 <?php
-// Run with php tests/features.php (requires gd/WebP, exif, mbstring, fileinfo).
+// Run with php tests/features.php (requires gd/WebP, exif, mbstring, fileinfo, zip).
 $fixture = sys_get_temp_dir() . '/vcard-features-' . bin2hex(random_bytes(8));
 function feature_copy_tree(string $source, string $target): void {
     if (is_dir($source)) {
@@ -95,6 +95,78 @@ foreach ($urls as $url) {
     feature_check(substr($png, 0, 8) === "\x89PNG\r\n\x1a\n", 'Invalid PNG output');
     feature_check((new \chillerlan\QRCode\QRCode())->readFromBlob($png)->data === $url, 'Generated QR could not be decoded.');
 }
+mkdir($fixture . '/public/uploads');
+copy("$imageDir/source.png", $fixture . '/public/uploads/old.png');
+$contacts[0]['bild'] = '/uploads/old.png';
+save_contacts($contacts);
+feature_check(trash_contact('em'), 'Trash operation failed');
+feature_check(count(load_json('contacts.json', [])) === 1 && count(trashed_contacts()) === 1, 'Trash visible in active contacts');
+feature_check(is_file($fixture . '/public/uploads/old.png'), 'Trash deleted photo');
+save_contacts(load_json('contacts.json', []));
+feature_check(count(trashed_contacts()) === 1, 'Active save lost trash');
+feature_check(make_contact_id('Erika', 'Muller', []) !== 'em', 'Trash ID reused');
+feature_check(restore_trashed_contact('em'), 'Restore failed');
+feature_check(count(load_json('contacts.json', [])) === 2 && !trashed_contacts(), 'Restored contact missing');
+feature_check(!purge_trashed_contact('em'), 'Purge accepted active contact');
+feature_check(trash_contact('em'), 'Second trash operation failed');
+$job = start_image_optimization();
+feature_check(is_file(data_path('backups/' . $job['backup'])), 'Migration started without backup');
+feature_check(start_image_optimization()['id'] === $job['id'], 'Resume created a new job');
+$job = step_image_optimization($job['id']);
+feature_check($job['done'] === 1 && $job['report'][0]['status'] === 'optimized', 'Migration failed to optimize trashed photo');
+$trashed = trashed_contacts()[0];
+feature_check(substr($trashed['bild'], -5) === '.webp' && is_file($fixture . '/public' . $trashed['bild']), 'Migration lost photo reference');
+feature_check(restore_trashed_contact('em'), 'Restore after migration failed');
+feature_check(trash_contact('em') && purge_trashed_contact('em'), 'Permanent deletion failed');
+feature_check(!is_file($fixture . '/public' . $trashed['bild']), 'Purge retained unused photo');
+$oldMemoryLimit = ini_get('memory_limit');
+$lowMemoryLimit = ((int)ceil(memory_get_usage(true) / (1024 * 1024)) + 2) . 'M';
+ini_set('memory_limit', $lowMemoryLimit);
+try {
+    optimize_image_file("$imageDir/source.png", "$imageDir/blocked.webp", 1200);
+    feature_check(false, 'Memory guard failed to stop an oversized decode');
+} catch (RuntimeException $error) {
+    feature_check(strpos($error->getMessage(), '1600 × 800') !== false && strpos($error->getMessage(), $lowMemoryLimit) !== false && strpos($error->getMessage(), '256M') !== false, 'Memory warning lacks dimensions, actual limit or recommendation');
+    feature_check(is_file("$imageDir/source.png") && !is_file("$imageDir/blocked.webp"), 'Memory failure changed the original');
+} finally {
+    ini_set('memory_limit', $oldMemoryLimit);
+}
+$shared = '/uploads/shared.png';
+copy("$imageDir/source.png", $fixture . '/public' . $shared);
+save_contacts([['id'=>'aa', 'bild'=>$shared], ['id'=>'bb', 'bild'=>$shared]]);
+feature_check(trash_contact('aa') && purge_trashed_contact('aa'), 'Shared-photo purge failed');
+feature_check(is_file($fixture . '/public' . $shared), 'Purge deleted another contact photo');
+feature_check(trash_contact('bb'), 'Backup trash setup failed');
+$backup = make_backup_zip();
+feature_check(restore_trashed_contact('bb') && restore_backup_zip($backup), 'Trash backup restore failed');
+feature_check(count(trashed_contacts()) === 1 && !load_json('contacts.json', []), 'Backup lost trash status');
+$job = start_image_optimization();
+$changed = load_json_file_path(data_path('contacts.json'));
+$changed[0]['bild'] = '/uploads/missing.png';
+save_json('contacts.json', $changed);
+$job = step_image_optimization($job['id']);
+feature_check($job['report'][0]['status'] === 'skipped', 'Migration overwrote changed photo');
+feature_check(step_image_optimization($job['id'])['done'] === $job['done'], 'Completed step repeated');
+$skipJob = ['id'=>'skip-test', 'done'=>0, 'backup'=>basename($backup), 'report'=>[], 'items'=>[
+    ['id'=>'bb', 'path'=>'/uploads/shared.png', 'label'=>'Photo'],
+    ['id'=>null, 'path'=>'/uploads/shared.png', 'label'=>'Logo'],
+]];
+save_json('image-optimization.json', $skipJob);
+feature_check(image_optimization_next($skipJob)['max_dimension'] === 768 && image_optimization_next($skipJob)['mime'] === 'image/png', 'Browser migration lacks image metadata');
+try {
+    step_image_optimization('skip-test', ['error'=>UPLOAD_ERR_OK]);
+    feature_check(false, 'Prepared upload accepted without progress position');
+} catch (RuntimeException $error) {feature_check(true, 'Prepared upload requires progress position');}
+feature_check(step_image_optimization('skip-test', null, 1)['done'] === 0, 'Stale prepared step advanced the current image');
+$beforeSkip = file_get_contents($fixture . '/public/uploads/shared.png');
+$skipped = skip_image_optimization('skip-test', 0);
+feature_check($skipped['done'] === 1 && $skipped['report'][0]['code'] === 'manual_skip', 'Manual skip failed');
+feature_check(skip_image_optimization('skip-test', 0)['done'] === 1, 'Stale skip skipped the next image');
+feature_check(file_get_contents($fixture . '/public/uploads/shared.png') === $beforeSkip, 'Manual skip changed original');
+feature_check(skip_image_optimization('skip-test', 1)['done'] === 2, 'Skip did not finish blocked run');
+feature_check(skip_image_optimization('skip-test', 2)['done'] === 2, 'Completed job advanced past end');
+feature_check(ini_bytes('128M') === 134217728 && ini_bytes('2G') === 2147483648, 'Server limit parser failed');
+feature_check(count(server_checks()) >= 15, 'Server check incomplete');
 echo "OK: $checks feature checks passed.\n";
 } finally {
     feature_remove_tree($fixture);

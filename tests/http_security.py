@@ -152,6 +152,18 @@ with tempfile.TemporaryDirectory(prefix="vcard-http-") as temporary:
         check(request("/admin/delete.php?id=ab")[0] == 405, "GET deletion accepted")
         check(request("/admin/delete.php", "POST", {"id": "ab"})[0] == 403, "Deletion without CSRF accepted")
         check(request("/admin/delete.php", "POST", {"id": "ab", "csrf_token": token})[0] == 302, "POST deletion failed")
+        deleted = json.loads((fixture / "data/contacts.json").read_text())
+        check(len(deleted) == 1 and deleted[0].get("_deleted_at"), "Contact not retained in trash")
+        check(request("/card.php?id=ab")[0] == 404, "Trashed public card still accessible")
+        check(request("/admin/trash.php")[0] == 200, "Trash page failed")
+        check(request("/admin/trash.php", "POST", {"id": "ab", "action": "restore"})[0] == 403, "Trash restore without CSRF accepted")
+        check(request("/admin/trash.php", "POST", {"id": "ab", "action": "restore", "csrf_token": token})[0] == 302, "Trash restore failed")
+        restored = json.loads((fixture / "data/contacts.json").read_text())[0]
+        check(restored["id"] == "ab" and not restored.get("_deleted_at"), "Restore changed contact ID")
+        check(request("/card.php?id=ab")[0] == 200, "Restored public card inaccessible")
+        check(request("/admin/delete.php", "POST", {"id": "ab", "csrf_token": token})[0] == 302, "Second trash operation failed")
+        check(request("/admin/maintenance.php")[0] == 200, "Image maintenance page failed")
+        check(request("/admin/maintenance.php", "POST", {"action": "start"})[0] == 403, "Maintenance without CSRF accepted")
         auth = {"X-API-Token": config["api_token"], "Content-Type": "application/json"}
         status, body, headers = request("/api.php", headers=auth)
         check(status == 200 and body == "[]", "Contact deletion failed")

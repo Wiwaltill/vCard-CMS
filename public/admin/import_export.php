@@ -36,6 +36,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_FILES['csv']['tmp_name']))
             $row = array_combine($header, array_pad($values, count($header), ''));
             if (!$row) continue;
             $id = trim($row['id'] ?? '');
+            if (in_array($id, array_column(trashed_contacts(), 'id'), true)) {
+                http_response_code(409);
+                exit('Contact ID is in the trash. Restore it before importing.');
+            }
             $existing = ($id !== '' && isset($byId[$id])) ? $contacts[$byId[$id]] : [];
             $contact = csv_row_to_contact($row, $config, $existing);
             if ($id !== '' && isset($byId[$id])) $contacts[$byId[$id]] = $contact;

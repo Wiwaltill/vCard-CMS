@@ -76,6 +76,9 @@ $config = get_config();
 </head>
 
 <body>
+<?php if (!empty($_SESSION['image_upload_warning'])): $imageWarning = $_SESSION['image_upload_warning']; unset($_SESSION['image_upload_warning']); ?>
+<div class="alert alert-warning m-3" role="status"><?= h(maintenance_t('Das Bild wurde im Originalformat gespeichert, weil die Optimierung nicht möglich war. Die Fehlerdetails stehen unten.', 'The original image was saved because optimization was unavailable. See the error details below.')) ?> <a href="/admin/settings#server-check"><?= h(maintenance_t('Server-Check', 'Server check')) ?></a><details class="mt-2"><summary><?= h(maintenance_t('Fehlerdetails', 'Error details')) ?></summary><pre class="mt-2 mb-0" style="white-space: pre-wrap"><?= h(is_string($imageWarning) ? $imageWarning : maintenance_t('Keine Details aus dem vorherigen Upload verfügbar.', 'No details available from the previous upload.')) ?></pre></details></div>
+<?php endif; ?>
 
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
@@ -126,6 +129,7 @@ $config = get_config();
                         </a>
                     </li>
 
+                    <li class="nav-item"><a class="nav-link" href="/admin/trash"><i class="bi bi-trash"></i> <?= h(maintenance_t("Papierkorb", "Trash")) ?></a></li>
                     <li class="nav-item">
                         <a class="nav-link" href="/admin/settings">
                             <i class="bi bi-gear"></i> <?= h(admin_t('settings', $config)) ?>

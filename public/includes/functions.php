@@ -77,7 +77,10 @@ function load_json(string $file, array $fallback = []): array
         return $fallback;
     }
 
-    return load_json_file_path($path, $fallback);
+    $data = load_json_file_path($path, $fallback);
+    return $file === 'contacts.json'
+        ? array_values(array_filter($data, static fn($contact) => empty($contact['_deleted_at'])))
+        : $data;
 }
 
 function save_json(string $file, array $data): void
@@ -201,7 +204,12 @@ function load_contacts(): array
 
 function save_contacts(array $contacts): void
 {
-    save_json('contacts.json', array_values($contacts));
+    $deleted = trashed_contacts();
+    $reserved = array_column($deleted, 'id');
+    foreach ($contacts as $contact) {
+        if (in_array($contact['id'], $reserved, true)) throw new RuntimeException('Contact ID is reserved in the trash.');
+    }
+    save_json('contacts.json', array_merge(array_values($contacts), $deleted));
 }
 
 function contact_form_values(array $input, array $config, array $existing = []): array
@@ -260,7 +268,7 @@ function make_contact_id(string $vorname, string $nachname, array $contacts, ?st
 
     $existingIds = array_map(function ($contact) {
         return $contact['id'] ?? '';
-    }, $contacts);
+    }, array_merge($contacts, trashed_contacts()));
 
     while (in_array($id, $existingIds, true) && $id !== $currentId) {
         $id = $base . $counter;
@@ -598,8 +606,16 @@ function image_memory_available(int $bytes): bool
 function optimize_image_file(string $source, string $target, int $maxDimension = 768): void
 {
     $dimensions = getimagesize($source);
-    if (!$dimensions || !image_memory_available($dimensions[0] * $dimensions[1] * 10)) {
-        throw new RuntimeException('Image is too large for this server. Please reduce its dimensions.');
+    if (!$dimensions) throw new RuntimeException(maintenance_t('Bildmaße konnten nicht gelesen werden.', 'Could not read image dimensions.'));
+    $estimatedBytes = $dimensions[0] * $dimensions[1] * 12 + $maxDimension * $maxDimension * 12 + filesize($source);
+    if (!image_memory_available($estimatedBytes)) {
+        $totalMiB = (int)ceil(($estimatedBytes + memory_get_usage(true) + 8 * 1024 * 1024) / (1024 * 1024));
+        $recommendedMiB = max(256, (int)ceil(($totalMiB + 1) / 64) * 64);
+        $details = $dimensions[0] . ' × ' . $dimensions[1] . ' px; ' . ini_get('memory_limit');
+        throw new RuntimeException(maintenance_t(
+            'Zu wenig PHP-Arbeitsspeicher (' . $details . '). Geschätzter Gesamtbedarf: ' . $totalMiB . ' MiB. memory_limit auf mindestens ' . $recommendedMiB . 'M erhöhen oder das Bild verkleinern. Das Original bleibt erhalten.',
+            'Insufficient PHP memory (' . $details . '). Estimated total requirement: ' . $totalMiB . ' MiB. Increase memory_limit to at least ' . $recommendedMiB . 'M or resize the image. The original is preserved.'
+        ));
     }
     $orientation = 1;
     if ($dimensions[2] === IMAGETYPE_JPEG) {
@@ -609,16 +625,6 @@ function optimize_image_file(string $source, string $target, int $maxDimension =
     $image = @imagecreatefromstring(file_get_contents($source));
     if (!$image) throw new RuntimeException('Cannot decode image.');
     try {
-        if (in_array($orientation, [2, 5, 7], true)) imageflip($image, IMG_FLIP_HORIZONTAL);
-        elseif ($orientation === 4) imageflip($image, IMG_FLIP_VERTICAL);
-        $angles = [3 => 180, 5 => 90, 6 => -90, 7 => -90, 8 => 90];
-        if (isset($angles[$orientation])) {
-            $transparent = imagecolorallocatealpha($image, 0, 0, 0, 127);
-            $rotated = imagerotate($image, $angles[$orientation], $transparent);
-            if (!$rotated) throw new RuntimeException('Cannot orient image.');
-            imagedestroy($image);
-            $image = $rotated;
-        }
         $width = imagesx($image);
         $height = imagesy($image);
         $ratio = min(1, $maxDimension / max($width, $height));
@@ -630,15 +636,28 @@ function optimize_image_file(string $source, string $target, int $maxDimension =
             imagealphablending($output, false);
             imagesavealpha($output, true);
             imagefill($output, 0, 0, imagecolorallocatealpha($output, 0, 0, 0, 127));
-            if (!imagecopyresampled($output, $image, 0, 0, 0, 0, $outWidth, $outHeight, $width, $height)
-                || !imagewebp($output, $target, 82) || !is_file($target) || filesize($target) === 0) {
+            if (!imagecopyresampled($output, $image, 0, 0, 0, 0, $outWidth, $outHeight, $width, $height)) throw new RuntimeException('Cannot resize image.');
+            imagedestroy($image);
+            $image = null;
+            if (in_array($orientation, [2, 5, 7], true)) imageflip($output, IMG_FLIP_HORIZONTAL);
+            elseif ($orientation === 4) imageflip($output, IMG_FLIP_VERTICAL);
+            $angles = [3 => 180, 5 => 90, 6 => -90, 7 => -90, 8 => 90];
+            if (isset($angles[$orientation])) {
+                $transparent = imagecolorallocatealpha($output, 0, 0, 0, 127);
+                $rotated = imagerotate($output, $angles[$orientation], $transparent);
+                if (!$rotated) throw new RuntimeException('Cannot orient image.');
+                imagedestroy($output);
+                $output = $rotated;
+                imagesavealpha($output, true);
+            }
+            if (!imagewebp($output, $target, 82) || !is_file($target) || filesize($target) === 0) {
                 throw new RuntimeException('Cannot save optimized image.');
             }
         } finally {
             imagedestroy($output);
         }
     } finally {
-        imagedestroy($image);
+        if ($image) imagedestroy($image);
     }
 }
 
@@ -658,6 +677,8 @@ function upload_image(string $field, string $prefix): string
         optimize_image_file($file['tmp_name'], $target, $field === 'company_logo' ? 1200 : 768);
     } catch (Throwable $error) {
         if (is_file($target)) unlink($target);
+        error_log('vCard image optimization failed: ' . get_class($error) . ': ' . $error->getMessage());
+        $_SESSION['image_upload_warning'] = $error->getMessage();
         // Optimization is optional: a validated upload must remain usable even
         // when GD/WebP/EXIF support or enough decoding memory is unavailable.
         $filename = $basename . '.' . $extension;
@@ -938,7 +959,7 @@ function admin_t(string $key, ?array $config = null): string
             'contacts'=>'Kontakte','data_types'=>'Datentypen','settings'=>'Einstellungen','logout'=>'Logout','backup'=>'Backup','csv'=>'CSV','api'=>'API',
             'appearance_language'=>'Darstellung & Sprache','language'=>'Sprache','language_auto'=>'Automatisch nach Browser','german'=>'Deutsch','english'=>'English','theme'=>'Theme','color_mode'=>'Farbmodus','auto'=>'Auto','light'=>'Hell','dark'=>'Dunkel','pwa_enable'=>'PWA aktivieren','save'=>'Speichern',
             'company_data'=>'Firmendaten','links'=>'Links','email_auto'=>'E-Mail Automatik','user_admin'=>'Nutzerverwaltung','saved'=>'Einstellungen gespeichert.',
-            'new_contact'=>'Neuer Kontakt','edit_contact'=>'Kontakt bearbeiten','delete_contact'=>'Kontakt löschen','delete_contact_confirm'=>'Soll der Kontakt wirklich gelöscht werden?','cancel'=>'Abbrechen','delete'=>'Löschen','actions'=>'Aktionen','last_name'=>'Nachname','first_name'=>'Vorname','email'=>'E-Mail','url'=>'URL','manual'=>'Manuell','position'=>'Position','phone'=>'Telefon','employee_photo'=>'Mitarbeiterfoto','username_or_url'=>'Username oder vollständige Profil-URL eintragen.','email_preview'=>'Live-Vorschau der automatisch generierten Adresse','override_email'=>'Automatische E-Mail überschreiben','image_replace'=>'Neues Bild ersetzt die alte Datei automatisch.','automatic'=>'Automatisch','delete_file_confirm'=>'wirklich löschen?','not_found'=>'Nicht gefunden','imported_contacts'=>'Kontakte importiert/aktualisiert.',
+            'new_contact'=>'Neuer Kontakt','edit_contact'=>'Kontakt bearbeiten','delete_contact'=>'Kontakt löschen','delete_contact_confirm'=>'Soll der Kontakt in den Papierkorb verschoben werden?','cancel'=>'Abbrechen','delete'=>'Löschen','actions'=>'Aktionen','last_name'=>'Nachname','first_name'=>'Vorname','email'=>'E-Mail','url'=>'URL','manual'=>'Manuell','position'=>'Position','phone'=>'Telefon','employee_photo'=>'Mitarbeiterfoto','username_or_url'=>'Username oder vollständige Profil-URL eintragen.','email_preview'=>'Live-Vorschau der automatisch generierten Adresse','override_email'=>'Automatische E-Mail überschreiben','image_replace'=>'Neues Bild ersetzt die alte Datei automatisch.','automatic'=>'Automatisch','delete_file_confirm'=>'wirklich löschen?','not_found'=>'Nicht gefunden','imported_contacts'=>'Kontakte importiert/aktualisiert.',
             'username'=>'Benutzername','password'=>'Passwort','remember_login'=>'Eingeloggt bleiben','login'=>'Einloggen','login_failed'=>'Login fehlgeschlagen.',
             'company_name'=>'Firmenname','company_color'=>'Firmenfarbe','company_logo'=>'Firmenlogo','logo_delete_confirm'=>'Firmenlogo wirklich löschen?','logo_replace'=>'Ein neues Logo ersetzt die alte Datei automatisch.','logo_link'=>'Logo-Link','home_redirect'=>'Startseiten-Weiterleitung','home_redirect_help'=>'Diese URL wird geöffnet, wenn die Root-Domain aufgerufen wird.','contact_email_404'=>'Sammelmail für 404-Seite','imprint_link'=>'Impressum Link','privacy_link'=>'Datenschutz Link','mail_domain'=>'Mail-Domain hinter dem @','mail_pattern'=>'Schema vor dem @','admin_username'=>'Admin Benutzername','new_password'=>'Neues Passwort','password_empty_help'=>'Leer lassen, wenn das Passwort nicht geändert werden soll.',
             'api_saved'=>'API-Einstellungen gespeichert.','api_enable'=>'REST API aktivieren','api_token'=>'API Token','regen_token'=>'Token neu erzeugen','endpoints_with_header'=>'Endpoints mit Header',
@@ -1242,4 +1263,215 @@ function restore_backup_zip(string $tmp): bool
             foreach ($rollback as $snapshot) if ($snapshot !== null && is_file($snapshot)) unlink($snapshot);
         }
     }
+}
+
+function trashed_contacts(): array
+{
+    return array_values(array_filter(load_json_file_path(data_path('contacts.json'), []), static fn($contact) => !empty($contact['_deleted_at'])));
+}
+
+function trash_contact(string $id): bool
+{
+    $contacts = load_json_file_path(data_path('contacts.json'), []);
+    foreach ($contacts as &$contact) {
+        if (($contact['id'] ?? '') === $id && empty($contact['_deleted_at'])) {
+            $contact['_deleted_at'] = gmdate('c');
+            save_json('contacts.json', $contacts);
+            return true;
+        }
+    }
+    return false;
+}
+
+function restore_trashed_contact(string $id): bool
+{
+    $contacts = load_json_file_path(data_path('contacts.json'), []);
+    foreach ($contacts as &$contact) {
+        if (($contact['id'] ?? '') === $id && !empty($contact['_deleted_at'])) {
+            unset($contact['_deleted_at']);
+            save_json('contacts.json', $contacts);
+            return true;
+        }
+    }
+    return false;
+}
+
+function upload_path(string $path): string
+{
+    if (!preg_match('~^/uploads/[a-zA-Z0-9_-]+\.(png|jpg|jpeg|webp)$~D', $path)) return '';
+    $candidate = __DIR__ . '/..' . $path;
+    if (is_link($candidate) || !is_file($candidate)) return '';
+    return $candidate;
+}
+
+function remove_unreferenced_image(string $path): void
+{
+    if (($path === '') || (get_config()['company_logo'] ?? '') === $path) return;
+    foreach (load_json_file_path(data_path('contacts.json'), []) as $contact) {
+        if (($contact['bild'] ?? '') === $path) return;
+    }
+    delete_public_file($path);
+}
+
+function purge_trashed_contact(string $id): bool
+{
+    $contacts = load_json_file_path(data_path('contacts.json'), []);
+    foreach ($contacts as $key => $contact) {
+        if (($contact['id'] ?? '') === $id && !empty($contact['_deleted_at'])) {
+            unset($contacts[$key]);
+            save_json('contacts.json', array_values($contacts));
+            remove_unreferenced_image($contact['bild'] ?? '');
+            return true;
+        }
+    }
+    return false;
+}
+
+function maintenance_t(string $de, string $en): string
+{
+    return admin_lang(get_config()) === 'en' ? $en : $de;
+}
+
+function server_checks(): array
+{
+    $checks = [
+        ['PHP', PHP_VERSION, version_compare(PHP_VERSION, '8.0', '>=')],
+        ['memory_limit', ini_get('memory_limit'), ini_get('memory_limit') === '-1' || ini_bytes(ini_get('memory_limit')) >= 128 * 1024 * 1024,
+            maintenance_t('Empfohlen: mindestens 128M mit der Verkleinerung im Browser. 192M reichen für die vorbereiteten Profilbilder und Logos. Große Originale werden vor dem Upload oder während der Migration im Browser verkleinert. Ohne Browser-Verkleinerung kann die serverseitige Verarbeitung eines Originals mehr Speicher benötigen.', 'Recommended: at least 128M with browser resizing. 192M is sufficient for prepared profile photos and logos. Large originals are resized in the browser before upload or during migration. Without browser resizing, server processing of an original may need more memory.')],
+        ['upload_max_filesize', ini_get('upload_max_filesize'), ini_bytes(ini_get('upload_max_filesize')) >= 5 * 1024 * 1024],
+        ['post_max_size', ini_get('post_max_size'), ini_bytes(ini_get('post_max_size')) === 0 || ini_bytes(ini_get('post_max_size')) >= 6 * 1024 * 1024],
+    ];
+    foreach (['fileinfo', 'gd', 'exif', 'mbstring', 'zip'] as $extension) {
+        $checks[] = [$extension, extension_loaded($extension) ? 'OK' : maintenance_t('Fehlt', 'Missing'), extension_loaded($extension)];
+    }
+    $gd = function_exists('gd_info') ? gd_info() : [];
+    foreach (['JPEG' => 'imagecreatefromjpeg', 'PNG' => 'imagecreatefrompng', 'WebP' => 'imagewebp'] as $label => $function) {
+        $supported = function_exists($function) && !empty($gd[$label . ' Support']);
+        $checks[] = [$label, $supported ? 'OK' : maintenance_t('Fehlt', 'Missing'), $supported];
+    }
+    foreach (['data/' => data_path(''), 'uploads/' => __DIR__ . '/../uploads', 'backups/' => data_path('backups')] as $label => $path) {
+        $writable = is_dir($path) ? is_writable($path) : is_writable(dirname(rtrim($path, '/')));
+        $checks[] = [$label, $writable ? maintenance_t('Beschreibbar', 'Writable') : maintenance_t('Nicht beschreibbar', 'Not writable'), $writable];
+    }
+    return $checks;
+}
+
+function ini_bytes(string $value): int
+{
+    $number = (int)$value;
+    switch (strtolower(substr(trim($value), -1))) {
+        case 'g': return $number * 1024 * 1024 * 1024;
+        case 'm': return $number * 1024 * 1024;
+        case 'k': return $number * 1024;
+        default: return $number;
+    }
+}
+
+function start_image_optimization(): array
+{
+    $previous = load_json_file_path(data_path('image-optimization.json'), []);
+    if (!empty($previous) && $previous['done'] < count($previous['items'])) return $previous;
+    if (!function_exists('imagewebp')) throw new RuntimeException(maintenance_t('GD mit WebP wird benötigt.', 'GD with WebP is required.'));
+    $backup = make_backup_zip();
+    if (!$backup) throw new RuntimeException(maintenance_t('Backup fehlgeschlagen. Es wurden keine Bilder verändert.', 'Backup failed. No images were changed.'));
+    $items = [];
+    foreach (load_json_file_path(data_path('contacts.json'), []) as $contact) {
+        if (!empty($contact['bild'])) $items[] = ['id' => $contact['id'], 'path' => $contact['bild'], 'label' => trim(($contact['vorname'] ?? '') . ' ' . ($contact['nachname'] ?? ''))];
+    }
+    $config = get_config();
+    if (!empty($config['company_logo'])) $items[] = ['id' => null, 'path' => $config['company_logo'], 'label' => maintenance_t('Firmenlogo', 'Company logo')];
+    $job = ['id' => bin2hex(random_bytes(12)), 'backup' => basename($backup), 'done' => 0, 'items' => $items, 'report' => []];
+    save_json('image-optimization.json', $job);
+    return $job;
+}
+
+function step_image_optimization(string $jobId, ?array $prepared = null, ?int $expectedDone = null): array
+{
+    if ($prepared !== null && $expectedDone === null) throw new RuntimeException(maintenance_t('Für vorbereitete Bilder fehlt der Fortschrittsstand.', 'Prepared image is missing the progress position.'));
+    $job = load_json_file_path(data_path('image-optimization.json'), []);
+    if (!$job || !hash_equals($job['id'], $jobId)) throw new RuntimeException(maintenance_t('Dieser Durchlauf ist nicht mehr aktuell.', 'This run is no longer current.'));
+    if ($job['done'] >= count($job['items']) || ($expectedDone !== null && $job['done'] !== $expectedDone)) return $job;
+    $item = $job['items'][$job['done']];
+    $status = 'skipped';
+    $code = '';
+    $reason = '';
+    $target = '';
+    $processing = false;
+    try {
+        $contacts = load_json_file_path(data_path('contacts.json'), []);
+        $config = get_config();
+        $key = null;
+        foreach ($contacts as $index => $contact) if ($contact['id'] === $item['id']) $key = $index;
+        $currentPath = $item['id'] === null ? ($config['company_logo'] ?? '') : ($key !== null ? ($contacts[$key]['bild'] ?? '') : '');
+        if ($currentPath !== $item['path']) throw new RuntimeException(maintenance_t('Bild inzwischen geändert oder Kontakt entfernt.', 'Image changed or contact removed meanwhile.'));
+        $source = upload_path($item['path']);
+        if (!$source || !valid_image_file($source, strtolower(pathinfo($source, PATHINFO_EXTENSION)))) throw new RuntimeException(maintenance_t('Datei fehlt oder Bild ist ungültig.', 'File missing or image invalid.'));
+        $limit = $item['id'] === null ? 1200 : 768;
+        $size = getimagesize($source);
+        if ($size[2] === IMAGETYPE_WEBP && max($size[0], $size[1]) <= $limit) {
+            $code = 'already_optimized';
+            throw new RuntimeException(maintenance_t('Bereits im Zielformat und innerhalb der Zielgröße.', 'Already in target format and within target dimensions.'));
+        }
+        $path = '/uploads/optimized-' . bin2hex(random_bytes(16)) . '.webp';
+        $target = __DIR__ . '/..' . $path;
+        $processing = true;
+        $input = $source;
+        if ($prepared !== null) {
+            $extension = strtolower(pathinfo($prepared['name'] ?? '', PATHINFO_EXTENSION));
+            $tmp = $prepared['tmp_name'] ?? '';
+            $dimensions = is_string($tmp) && is_file($tmp) ? @getimagesize($tmp) : false;
+            if (($prepared['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || !is_uploaded_file($tmp)
+                || !valid_image_file($tmp, $extension) || !$dimensions || max($dimensions[0], $dimensions[1]) > $limit) {
+                throw new RuntimeException(maintenance_t('Das vorbereitete Bild ist ungültig oder zu groß. Das Original bleibt erhalten.', 'Prepared image is invalid or too large. The original is preserved.'));
+            }
+            $input = $tmp;
+        }
+        optimize_image_file($input, $target, $limit);
+        if ($item['id'] === null) {
+            $config['company_logo'] = $path;
+            save_json('config.json', $config);
+        } else {
+            $contacts[$key]['bild'] = $path;
+            save_json('contacts.json', $contacts);
+        }
+        $status = 'optimized';
+        $reason = number_format(filesize($source) / 1024, 0) . ' KB → ' . number_format(filesize($target) / 1024, 0) . ' KB';
+        $target = '';
+        remove_unreferenced_image($item['path']);
+    } catch (Throwable $error) {
+        if ($target && is_file($target)) unlink($target);
+        $reason = $error->getMessage();
+        if ($processing) error_log('vCard batch image optimization: ' . $reason);
+    }
+    $job['report'][] = ['label' => $item['label'], 'status' => $status, 'code' => $code, 'reason' => $reason];
+    $job['done']++;
+    save_json('image-optimization.json', $job);
+    return $job;
+}
+
+
+function skip_image_optimization(string $jobId, int $expectedDone): array
+{
+    $job = load_json_file_path(data_path('image-optimization.json'), []);
+    if (!$job || !hash_equals($job['id'], $jobId)) throw new RuntimeException(maintenance_t('Dieser Durchlauf ist nicht mehr aktuell.', 'This run is no longer current.'));
+    // Never skip the next image when a previous response was lost or another tab advanced.
+    if ($job['done'] !== $expectedDone || $job['done'] >= count($job['items'])) return $job;
+    $item = $job['items'][$job['done']];
+    $job['report'][] = ['label' => $item['label'], 'status' => 'skipped', 'code' => 'manual_skip', 'reason' => maintenance_t('Manuell übersprungen. Das Original bleibt erhalten.', 'Skipped manually. The original is preserved.')];
+    $job['done']++;
+    save_json('image-optimization.json', $job);
+    return $job;
+}
+
+
+function image_optimization_next(array $job): ?array
+{
+    if ($job['done'] >= count($job['items'])) return null;
+    $item = $job['items'][$job['done']];
+    $source = upload_path($item['path']);
+    if (!$source) return null;
+    $size = @getimagesize($source);
+    $limit = $item['id'] === null ? 1200 : 768;
+    if (!$size || ($size[2] === IMAGETYPE_WEBP && max($size[0], $size[1]) <= $limit)) return null;
+    return ['path' => $item['path'], 'max_dimension' => $limit, 'mime' => $size['mime']];
 }

@@ -28,19 +28,16 @@ $current = array_replace(['vorname' => '', 'nachname' => '', 'position' => '', '
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
+    $oldPhoto = $contacts[$currentKey]['bild'] ?? '';
     $contact = contact_form_values($_POST, $config, $contacts[$currentKey]);
 
     if (isset($_POST['delete_bild']) && !empty($contacts[$currentKey]['bild'])) {
-        delete_public_file($contacts[$currentKey]['bild']);
         $contact['bild'] = '';
     }
 
     $bild = isset($_POST['delete_bild']) ? '' : upload_image('bild', 'mitarbeiter-' . $id);
 
     if ($bild !== '') {
-        if (!empty($contacts[$currentKey]['bild'])) {
-            delete_public_file($contacts[$currentKey]['bild']);
-        }
         $contact['bild'] = $bild;
     }
 
@@ -48,6 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $contacts[$currentKey] = $contact;
 
     save_contacts($contacts);
+    if ($oldPhoto !== ($contact['bild'] ?? '')) remove_unreferenced_image($oldPhoto);
 
     header('Location: ' . (isset($_POST['delete_bild']) ? '/admin/edit?id=' . rawurlencode($id) : '/admin'));
     exit;

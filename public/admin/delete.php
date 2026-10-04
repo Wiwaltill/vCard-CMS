@@ -10,21 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit('Method not allowed.');
 }
 
-$contacts = load_json('contacts.json', []);
-$id = $_POST['id'] ?? '';
-
-foreach ($contacts as $contact) {
-    if (($contact['id'] ?? '') === $id && !empty($contact['bild'])) {
-        delete_public_file($contact['bild']);
-        break;
-    }
-}
-
-$contacts = array_filter($contacts, function ($contact) use ($id) {
-    return ($contact['id'] ?? '') !== $id;
-});
-
-save_contacts($contacts);
+trash_contact((string)($_POST['id'] ?? ''));
 
 header('Location: /admin');
 exit;

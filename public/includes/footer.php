@@ -54,6 +54,8 @@
     });
   })();
 </script>
+<script src="/assets/js/browser-images.js" defer></script>
+<script src="/assets/js/unsaved-changes.js" defer></script>
 </body>
 
 </html>

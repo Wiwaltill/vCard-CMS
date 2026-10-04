@@ -40,6 +40,7 @@ $input = function () {
         http_response_code(422);
         exit(json_encode(['error' => 'invalid contact fields or id']));
     }
+    unset($data['_deleted_at']);
     return $data;
 };
 
@@ -59,7 +60,7 @@ if ($method === 'POST') {
     $data = array_replace(['vorname' => '', 'nachname' => '', 'telefon' => '',
         'email' => '', 'email_override' => false, 'position' => '', 'bild' => '', 'fields' => []], $input());
     $data['id'] = $data['id'] ?? make_contact_id($data['vorname'] ?? '', $data['nachname'] ?? '', $contacts);
-    if ($find($data['id']) !== null) {
+    if ($find($data['id']) !== null || in_array($data['id'], array_column(trashed_contacts(), 'id'), true)) {
         http_response_code(409);
         exit(json_encode(['error' => 'id already exists']));
     }
@@ -90,8 +91,7 @@ if ($method === 'DELETE' && $id) {
         echo json_encode(['error' => 'not found']);
         exit;
     }
-    array_splice($contacts, $i, 1);
-    save_contacts($contacts);
+    trash_contact($id);
     echo json_encode(['deleted' => $id]);
     exit;
 }

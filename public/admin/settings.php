@@ -9,6 +9,7 @@ $success = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
+    $oldLogo = $config['company_logo'] ?? '';
     $config['company_name'] = trim($_POST['company_name']);
     $config['company_color'] = trim($_POST['company_color']);
     $config['logo_link'] = trim($_POST['logo_link']);
@@ -35,17 +36,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (isset($_POST['delete_company_logo']) && !empty($config['company_logo'])) {
-        delete_public_file($config['company_logo']);
         $config['company_logo'] = '';
     }
 
-    $logo = upload_image('company_logo', 'logo');
+    $logo = isset($_POST['delete_company_logo']) ? '' : upload_image('company_logo', 'logo');
     if ($logo !== '') {
-        delete_public_file($config['company_logo'] ?? '');
         $config['company_logo'] = $logo;
     }
 
     save_json('config.json', $config);
+    if ($oldLogo !== ($config['company_logo'] ?? '')) remove_unreferenced_image($oldLogo);
     $_SESSION['admin_fingerprint'] = auth_fingerprint($config);
     $success = true;
 }
@@ -60,7 +60,7 @@ include __DIR__ . '/../includes/header.php';
     <div class="alert alert-success"><?= h(admin_t('saved', $config)) ?></div>
 <?php endif; ?>
 
-<form method="post" enctype="multipart/form-data"><?= csrf_field() ?>
+<form method="post" enctype="multipart/form-data" data-unsaved-warning><?= csrf_field() ?>
 
     <div class="card bg-white shadow-sm mb-4">
         <div class="card-header"><?= h(admin_t('company_data', $config)) ?></div>
@@ -218,4 +218,15 @@ include __DIR__ . '/../includes/header.php';
 
 </form>
 
+<section id="server-check" class="card mt-4">
+<div class="card-header"><h2 class="h5 mb-0"><?= h(maintenance_t('Server-Check', 'Server check')) ?></h2></div>
+<div class="card-body">
+<p><?= h(maintenance_t('Die Werte gelten für die PHP-Laufzeit dieser Website. Der Speicherbedarf eines Fotos hängt von den Pixelmaßen ab, nicht allein von der Dateigröße. Ein Hinweis beim Speicherlimit bedeutet, dass große Fotos eventuell nur im Original gespeichert werden können.', 'These values apply to the PHP runtime of this website. Photo memory usage depends on pixel dimensions, not just file size. A memory warning means large photos may have to be stored as originals.')) ?></p>
+<div class="table-responsive"><table class="table"><thead><tr><th><?= h(maintenance_t('Prüfung', 'Check')) ?></th><th><?= h(maintenance_t('Wert', 'Value')) ?></th><th>Status</th></tr></thead><tbody>
+<?php foreach (server_checks() as $check): [$label, $value, $ok, $hint] = array_pad($check, 4, ''); ?>
+<tr><td><?= h($label) ?></td><td><?= h((string)$value) ?><?php if ($hint): ?><div class="small text-body-secondary mt-1" style="max-width: 42rem"><?= h($hint) ?></div><?php endif; ?></td><td><span class="badge <?= $ok ? 'text-bg-success' : 'text-bg-warning' ?>"><?= h($ok ? 'OK' : maintenance_t('Prüfen', 'Review')) ?></span></td></tr>
+<?php endforeach; ?>
+</tbody></table></div>
+<a class="btn btn-outline-primary" href="/admin/maintenance"><?= h(maintenance_t('Bestehende Bilder optimieren', 'Optimize existing images')) ?></a>
+</div></section>
 <?php include __DIR__ . '/../includes/footer.php'; ?>
