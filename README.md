@@ -259,7 +259,7 @@ Für ein neues Release:
 
 1. `version` in `public/includes/version.json` erhöhen, beispielsweise auf `1.1.0`; bei Bedarf auch `php_min` anpassen.
 2. Änderungen pushen und die GitHub-Prüfungen einschließlich der Updater-Tests abwarten.
-3. Auf GitHub ein stabiles Release mit dem dazu passenden Tag **`v1.1.0`** am geprüften Commit veröffentlichen. Der Tag muss zur Versionsdatei passen; ein zusätzliches ZIP-Asset ist nicht nötig.
+3. Auf GitHub ein stabiles Release mit dem dazu passenden Tag **`v1.1.0`** am geprüften Commit veröffentlichen. Kurze Tags wie `2.0` oder `v2.0` entsprechen `2.0.0`. Der Tag muss zur Versionsdatei passen; ein zusätzliches ZIP-Asset ist nicht nötig.
 4. Auf dem Webserver unter **Admin → Updates** prüfen und installieren.
 
 ## Updates der Abhängigkeiten

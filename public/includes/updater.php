@@ -4,12 +4,19 @@ const UPDATE_REPOSITORY = 'Wiwaltill/vCard-CMS';
 
 function update_message(string $de, string $en): string { return maintenance_t($de, $en); }
 function update_root(): string { return dirname(__DIR__, 2); }
+function update_normalized_version(mixed $value): string {
+    if (!is_string($value) || !preg_match('/^[vV]?(\d+\.\d+)(?:\.(\d+))?$/D', $value, $match)) {
+        throw new RuntimeException(update_message('Ungültige stabile Versionsnummer. Erwartet wird beispielsweise 2.0 oder 2.0.1.', 'Invalid stable version. Expected a value such as 2.0 or 2.0.1.'));
+    }
+    return $match[1] . '.' . ($match[2] ?? '0');
+}
 function update_version(string $file = ''): array {
     $value = json_decode((string)file_get_contents($file ?: __DIR__ . '/version.json'), true);
-    if (!is_array($value) || !preg_match('/^\d+\.\d+\.\d+$/D', $value['version'] ?? '')
+    if (!is_array($value) || !is_string($value['version'] ?? null)
         || !preg_match('/^\d+\.\d+(?:\.\d+)?$/D', $value['php_min'] ?? '')) {
         throw new RuntimeException(update_message('Ungültige Versionsdatei.', 'Invalid version manifest.'));
     }
+    $value['version'] = update_normalized_version($value['version']);
     return $value;
 }
 function update_directory(string $name): string {
@@ -25,7 +32,7 @@ function update_remove_tree(string $path): void {
 }
 function update_http(string $url, string $destination, int $limit): void {
     // No arbitrary URL or redirect from release metadata is ever fetched.
-    if (!preg_match('~^https://(?:api\.github\.com/repos/Wiwaltill/vCard-CMS/(?:releases/latest|git/ref/tags/[vV]?\d+\.\d+\.\d+|git/tags/[a-f0-9]{40})|codeload\.github\.com/Wiwaltill/vCard-CMS/zip/[a-f0-9]{40})$~D', $url)) throw new RuntimeException('Invalid update URL.');
+    if (!preg_match('~^https://(?:api\.github\.com/repos/Wiwaltill/vCard-CMS/(?:releases/latest|git/ref/tags/[vV]?\d+\.\d+(?:\.\d+)?|git/tags/[a-f0-9]{40})|codeload\.github\.com/Wiwaltill/vCard-CMS/zip/[a-f0-9]{40})$~D', $url)) throw new RuntimeException('Invalid update URL.');
     $out = fopen($destination, 'wb');
     if (!$out) throw new RuntimeException('Cannot write download.');
     $size = 0;
@@ -78,7 +85,7 @@ function update_release(?callable $fetch = null): array {
     $fetch = $fetch ?? 'update_api';
     $release = $fetch('releases/latest');
     $tag = $release['tag_name'] ?? '';
-    if (!is_string($tag) || !preg_match('/^[vV]?(\d+\.\d+\.\d+)$/D', $tag, $match) || !empty($release['draft']) || !empty($release['prerelease'])) {
+    if (!is_string($tag) || !preg_match('/^[vV]?(\d+\.\d+(?:\.\d+)?)$/D', $tag, $match) || !empty($release['draft']) || !empty($release['prerelease'])) {
         throw new RuntimeException(update_message('Kein gültiges stabiles Release.', 'No valid stable release.'));
     }
     $object = $fetch('git/ref/tags/' . rawurlencode($tag))['object'] ?? [];
@@ -87,7 +94,7 @@ function update_release(?callable $fetch = null): array {
         $object = $fetch('git/tags/' . $object['sha'])['object'] ?? [];
     }
     if (($object['type'] ?? '') !== 'commit' || !preg_match('/^[a-f0-9]{40}$/D', $object['sha'] ?? '')) throw new RuntimeException('Invalid release commit.');
-    $result = ['version'=>$match[1], 'tag'=>$tag, 'sha'=>$object['sha'], 'checked_at'=>gmdate('c'),
+    $result = ['version'=>update_normalized_version($tag), 'tag'=>$tag, 'sha'=>$object['sha'], 'checked_at'=>gmdate('c'),
         'notes'=>mb_substr((string)($release['body'] ?? ''), 0, 12000), 'url'=>'https://github.com/' . UPDATE_REPOSITORY . '/releases/tag/' . rawurlencode($tag)];
     save_json('update-release.json', $result);
     return $result;
@@ -138,7 +145,7 @@ function update_stage(string $archive, string $stage, string $expectedVersion): 
             if (!in_array($required, $files, true)) throw new RuntimeException('Incomplete vCard-CMS release: ' . $required);
         }
         $version = update_version($stage . '/public/includes/version.json');
-        if ($version['version'] !== $expectedVersion) throw new RuntimeException(update_message('Release-Tag und Versionsdatei stimmen nicht überein.', 'Release tag and version manifest do not match.'));
+        if ($version['version'] !== $expectedVersion) throw new RuntimeException(update_message('Release-Tag und Versionsdatei stimmen nicht überein: erwartet ' . $expectedVersion . ', im Paket steht ' . $version['version'] . '. Bitte ein korrigiertes Release veröffentlichen.', 'Release tag and version manifest do not match: expected ' . $expectedVersion . ', package contains ' . $version['version'] . '. Publish a corrected release.'));
         if (version_compare(PHP_VERSION, $version['php_min'], '<')) throw new RuntimeException('PHP ' . $version['php_min'] . '+ required.');
         return $files;
     } finally { $zip->close(); }

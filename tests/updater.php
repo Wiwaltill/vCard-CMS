@@ -38,6 +38,10 @@ function updater_zip(string $fixture, string $version, array $extra = []): strin
     $zip->close(); return $path;
 }
 try {
+    updater_check(update_normalized_version('2.0') === '2.0.0' && update_normalized_version('v2.0') === '2.0.0' && update_normalized_version('v2.0.1') === '2.0.1', 'Short release versions not normalized');
+    updater_reject(fn()=>update_normalized_version('2.0-rc1'), 'Prerelease version normalized as stable');
+    $short = update_release(static fn($path)=>$path === 'releases/latest' ? ['tag_name'=>'2.0'] : ['object'=>['type'=>'commit','sha'=>str_repeat('a',40)]]);
+    updater_check($short['version'] === '2.0.0' && $short['tag'] === '2.0', 'Short release tag was changed or rejected');
     $config = get_config(); $config['installed'] = true; save_json('config.json', $config);
     save_json('contacts.json', [['id'=>'ab','vorname'=>'Erika','_deleted_at'=>'2026-10-04','_purged_at'=>'2026-10-04']]);
     file_put_contents($fixture . '/public/uploads/photo.png', 'original user photo');
