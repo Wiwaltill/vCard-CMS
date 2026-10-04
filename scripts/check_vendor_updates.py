@@ -72,8 +72,10 @@ def report(results):
             status = "Update verfügbar" if item["update"] else "Kein neueres Release"
             if item["update"] and item["major"]:
                 status += " – neue Hauptversion; PHP-Kompatibilität prüfen"
+        if item.get('update_note'):
+            status += ' – ' + item['update_note']
         lines.append(f"| [{escape(item['name'])}](https://github.com/{repository}/releases) | {escape(item['version'])} | {escape(latest)} | {escape(status)} |")
-    lines.extend(["", "Dieser Check verändert keine Vendor-Dateien. Vor Updates PHP-Anforderungen, Lizenzhinweise und die Tests unter PHP 8.0 und 8.4 prüfen.", ""])
+    lines.extend(["", "Dieser Check verändert keine Vendor-Dateien. Vor Updates PHP-Anforderungen, Lizenzhinweise und die Tests unter PHP 8.2 und 8.4 prüfen.", ""])
     return "\n".join(lines)
 
 

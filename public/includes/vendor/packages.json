@@ -3,12 +3,13 @@
     {
       "name": "chillerlan/php-qrcode",
       "repository": "chillerlan/php-qrcode",
-      "version": "5.0.5"
+      "version": "6.0.1"
     },
     {
       "name": "chillerlan/php-settings-container",
       "repository": "chillerlan/php-settings-container",
-      "version": "2.1.6"
+      "version": "3.2.1",
+      "update_note": "QR Code 6.0.1 unterstützt Settings ^3.2.1; Settings 4.x erst zusammen mit einer kompatiblen QR-Version übernehmen."
     }
   ]
 }

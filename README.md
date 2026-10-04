@@ -29,7 +29,7 @@ Ein kleines PHP-CMS mit Adminbereich, Kontaktkarten, vCard-Downloads und QR-Code
 
 ### Voraussetzungen
 
-- PHP **8.0 oder neuer**; für den Betrieb eine gepflegte PHP-Version einsetzen.
+- PHP **8.2 oder neuer** (empfohlen: **8.4**); für den Betrieb eine gepflegte PHP-Version einsetzen.
 - Apache mit `mod_rewrite` und erlaubten `.htaccess`-Regeln, beispielsweise `AllowOverride All` für `public/`.
 - PHP-Erweiterungen **fileinfo**, **gd** mit JPEG-, PNG- und WebP-Unterstützung, **mbstring** und **zip** (`ZipArchive`).
 - **exif** wird zusätzlich für die Ausrichtung von JPEGs bei der direkten serverseitigen Verarbeitung empfohlen. Browser-vorbereitete Bilder benötigen keine EXIF-Verarbeitung in PHP.
@@ -234,7 +234,7 @@ node tests/image_maintenance.mjs
 
 Die Funktionstests prüfen Suche, Pagination, Domain-Erkennung, Bildverarbeitung, alle acht EXIF-Ausrichtungen, QR-Code-Rundläufe, Papierkorb, Backups und Migrationsfortschritt. Die JavaScript-Tests prüfen Cache-Isolation, Änderungswarnungen und die Wiederaufnahme nach fehlerhaften Serverantworten.
 
-Die tatsächliche Browser-Verkleinerung zusätzlich mit Foto-Upload und Bildmigration im Browser prüfen; sie wird durch diese Skripte nicht vollständig abgedeckt. GitHub Actions prüft Syntax, Funktionen und Sicherheitsfälle mit PHP 8.0 und 8.4.
+Die tatsächliche Browser-Verkleinerung zusätzlich mit Foto-Upload und Bildmigration im Browser prüfen; sie wird durch diese Skripte nicht vollständig abgedeckt. GitHub Actions prüft Syntax, Funktionen und Sicherheitsfälle mit PHP 8.2 und 8.4.
 
 ## Updates der Abhängigkeiten
 

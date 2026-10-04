@@ -27,6 +27,12 @@ class VendorUpdates(unittest.TestCase):
         for tag in ["v5.9.0", "5.8.9"]:
             self.assertFalse(checker.check_packages(self.packages, self.release(tag))[0]["update"])
 
+    def test_dependency_constraint_remains_visible(self):
+        packages = [dict(self.packages[0], update_note="QR requires ^3.2.1 <script>")]
+        result = checker.check_packages(packages, self.release("6.0.0"))[0]
+        self.assertTrue(result["update"])
+        self.assertIn("QR requires ^3.2.1 &lt;script&gt;", checker.report([result]))
+
     def test_api_error_is_not_reported_as_current(self):
         def broken(repository):
             raise RuntimeError("GitHub API: HTTP 403")

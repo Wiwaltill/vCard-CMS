@@ -1,11 +1,14 @@
 name: PHP security checks
 on: [push, pull_request]
+permissions:
+  contents: read
+
 jobs:
   checks:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php: ['8.0', '8.4']
+        php: ['8.2', '8.4']
     steps:
       - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2

@@ -1335,7 +1335,7 @@ function maintenance_t(string $de, string $en): string
 function server_checks(): array
 {
     $checks = [
-        ['PHP', PHP_VERSION, version_compare(PHP_VERSION, '8.0', '>=')],
+        ['PHP', PHP_VERSION, version_compare(PHP_VERSION, '8.2', '>=')],
         ['memory_limit', ini_get('memory_limit'), ini_get('memory_limit') === '-1' || ini_bytes(ini_get('memory_limit')) >= 128 * 1024 * 1024,
             maintenance_t('Empfohlen: mindestens 128M mit der Verkleinerung im Browser. 192M reichen für die vorbereiteten Profilbilder und Logos. Große Originale werden vor dem Upload oder während der Migration im Browser verkleinert. Ohne Browser-Verkleinerung kann die serverseitige Verarbeitung eines Originals mehr Speicher benötigen.', 'Recommended: at least 128M with browser resizing. 192M is sufficient for prepared profile photos and logos. Large originals are resized in the browser before upload or during migration. Without browser resizing, server processing of an original may need more memory.')],
         ['upload_max_filesize', ini_get('upload_max_filesize'), ini_bytes(ini_get('upload_max_filesize')) >= 5 * 1024 * 1024],

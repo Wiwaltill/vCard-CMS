@@ -9,7 +9,10 @@ function qr_matrix(string $text): array
         'addQuietzone' => true,
         'quietzoneSize' => 4,
     ]);
-    return (new \chillerlan\QRCode\QRCode($options))->addByteSegment($text)->getQRMatrix()->getMatrix(true);
+    $matrix = (new \chillerlan\QRCode\QRCode($options))->addByteSegment($text)->getQRMatrix();
+    return array_map(static fn(array $row): array => array_map(
+        static fn(int $module): bool => $matrix->isDark($module), $row
+    ), $matrix->matrix);
 }
 
 function qr_svg(array $matrix): string

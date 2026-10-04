@@ -84,11 +84,18 @@ $image = imagecreatefromwebp("$imageDir/transparent.webp");
 feature_check(imagesx($image) === 32 && imagesy($image) === 24, 'Small image enlarged');
 feature_check(imagecolorsforindex($image, imagecolorat($image, 1, 1))['alpha'] >= 120, 'Transparency lost');
 imagedestroy($image);
-$urls = ['https://example.test/em', 'https://cards.example.test:8443/abcdefghijklmnopqrst', 'https://' . str_repeat('long-subdomain.', 8) . 'example.test/em'];
+$urls = ['https://example.test/em', 'https://cards.example.test:8443/abcdefghijklmnopqrst', 'https://' . str_repeat('long-subdomain.', 8) . 'example.test/em', 'https://example.test/ä?name=Jörg&team=研发'];
 $output = [];
 foreach ($urls as $url) {
     $matrix = qr_matrix($url);
-    feature_check(count($matrix) >= 29 && !in_array(true, $matrix[0], true), 'QR quiet zone missing');
+    $size = count($matrix);
+    feature_check($size >= 29, 'QR matrix too small');
+    foreach ($matrix as $y => $row) foreach ($row as $x => $dark) {
+        feature_check(is_bool($dark), 'QR renderer needs boolean modules');
+        if ($x < 4 || $y < 4 || $x >= $size - 4 || $y >= $size - 4) {
+            feature_check(!$dark, 'QR quiet zone must remain four white modules on every side');
+        }
+    }
     $svg = qr_svg($matrix);
     feature_check(strpos($svg, '<svg') === 0 && strpos($svg, '<script') === false, 'Invalid SVG output');
     $png = qr_png($matrix);
