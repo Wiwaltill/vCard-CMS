@@ -29,3 +29,8 @@ Thumbs.db
 
 /tests/__pycache__/
 /data/.restore-*
+
+# GitHub updater state and private code backups
+/data/update-*.json
+/data/update-work/
+/data/update-backups/

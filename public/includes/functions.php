@@ -14,6 +14,15 @@ if (PHP_SAPI !== 'cli') {
     });
 }
 
+// A killed update must not serve mixed application files. The recovery page stays available.
+if (PHP_SAPI !== 'cli' && is_file(__DIR__ . '/../../data/update-in-progress.json')
+    && ($_SERVER['SCRIPT_NAME'] ?? '') !== '/admin/update.php') {
+    http_response_code(503);
+    header('Retry-After: 60');
+    header('Cache-Control: no-store');
+    exit('Update recovery required. Open /admin/update as administrator.');
+}
+
 
 function data_path(string $file): string
 {

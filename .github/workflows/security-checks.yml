@@ -22,6 +22,8 @@ jobs:
         run: php tests/security.php
       - name: Test images, trash, migration and local QR codes
         run: php tests/features.php
+      - name: Test GitHub updater and rollback
+        run: php tests/updater.php
       - name: Test HTTP flows and concurrent writes
         run: python3 tests/http_security.py
       - name: Test Service Worker cache isolation

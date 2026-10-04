@@ -129,6 +129,7 @@ $config = get_config();
                         </a>
                     </li>
 
+                    <li class="nav-item"><a class="nav-link" href="/admin/update"><i class="bi bi-arrow-repeat"></i> <?= h(maintenance_t("Updates", "Updates")) ?></a></li>
                     <li class="nav-item"><a class="nav-link" href="/admin/trash"><i class="bi bi-trash"></i> <?= h(maintenance_t("Papierkorb", "Trash")) ?></a></li>
                     <li class="nav-item">
                         <a class="nav-link" href="/admin/settings">

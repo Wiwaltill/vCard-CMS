@@ -128,7 +128,7 @@ with tempfile.TemporaryDirectory(prefix="vcard-http-") as temporary:
                 if tag == "form":
                     self.current = None
 
-        for page in ("new.php", "edit.php?id=ab", "settings.php", "datatypes.php", "backup.php", "api.php", "import_export.php"):
+        for page in ("new.php", "edit.php?id=ab", "update.php", "settings.php", "datatypes.php", "backup.php", "api.php", "import_export.php"):
             status, rendered, _ = request("/admin/" + page)
             check(status == 200, "Admin form page failed: " + page)
             parser = FormTokens()
@@ -136,6 +136,13 @@ with tempfile.TemporaryDirectory(prefix="vcard-http-") as temporary:
             check(parser.forms and all(parser.forms), "Missing form CSRF field: " + page)
         status, printed_svg, _ = request("/qr.php?id=ab&format=svg")
         check(status == 200 and "<svg" in printed_svg, "Initial printed QR unavailable")
+        check(request("/admin/update.php", "POST", {"action":"check"})[0] == 403, "Updater accepted missing CSRF token")
+        status, updater_error, _ = request("/admin/update.php", "POST", {"action":"download", "backup":"../config.json", "csrf_token":token})
+        check(status == 200 and config["api_token"] not in updater_error, "Updater backup traversal leaked private data")
+        (fixture / "data/update-in-progress.json").write_text(json.dumps({"backup":"interrupted"}))
+        check(request("/card.php?id=ab")[0] == 503, "Interrupted updater served mixed public code")
+        check(request("/admin/update.php")[0] == 200, "Interrupted updater blocked admin recovery")
+        (fixture / "data/update-in-progress.json").unlink()
         before_preview = (fixture / "data/contacts.json").read_bytes()
         draft = {"preview_id": "ab", "vorname": "Erika", "nachname": "Beispiel", "csrf_token": token}
         status, rendered, preview_headers = request("/admin/preview.php", "POST", draft)

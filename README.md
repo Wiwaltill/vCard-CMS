@@ -227,6 +227,7 @@ Mit einer lokalen PHP-Laufzeit einschließlich der oben genannten Erweiterungen:
 find public tests -name '*.php' -print0 | xargs -0 -n1 php -l
 php tests/security.php
 php tests/features.php
+php tests/updater.php
 python3 tests/http_security.py
 ```
 
@@ -241,6 +242,25 @@ node tests/image_maintenance.mjs
 Die Funktionstests prüfen Suche, Pagination, Domain-Erkennung, Bildverarbeitung, alle acht EXIF-Ausrichtungen, QR-Code-Rundläufe, Papierkorb, Backups und Migrationsfortschritt. Die JavaScript-Tests prüfen Cache-Isolation, Änderungswarnungen und die Wiederaufnahme nach fehlerhaften Serverantworten.
 
 Die tatsächliche Browser-Verkleinerung zusätzlich mit Foto-Upload und Bildmigration im Browser prüfen; sie wird durch diese Skripte nicht vollständig abgedeckt. GitHub Actions prüft Syntax, Funktionen und Sicherheitsfälle mit PHP 8.2 und 8.4.
+
+## Anwendung über GitHub aktualisieren
+
+Unter **Admin → Updates** kannst du veröffentlichte stabile Releases aus `Wiwaltill/vCard-CMS` prüfen und installieren. Die installierte Version steht in `public/includes/version.json`; der erste Stand mit Updater ist **1.0.0**. Der Updater wird einmal zusammen mit dieser Version auf den Server übertragen. Danach erfolgen Code-Updates über die Adminseite.
+
+- **Auf Updates prüfen** fragt GitHub ab und zeigt Version, Prüfzeitpunkt und Release-Hinweise. Ohne veröffentlichtes Release erscheint ein entsprechender Hinweis. Ein Push auf `main` allein ist kein installierbares Release.
+- **Release installieren** prüft das Release erneut und lädt den ZIP-Quellcode des konkreten Tag-Commits. Vorschauversionen, ältere Versionen, abweichende Versionsangaben, unsichere ZIP-Pfade und unpassende PHP-Anforderungen werden abgewiesen.
+- Vor dem ersten Schreibvorgang werden ein Daten-Backup im normalen Backup-Bereich und ein separates Backup der ersetzten Programmdateien erstellt. Kontakte einschließlich reservierter QR-IDs, Einstellungen, Fotos, Logo, Sitzungsdaten und vorhandene Backups werden nicht aus dem Release überschrieben.
+- **Vorherigen Code wiederherstellen** setzt den letzten Update-Schritt zurück. Nutzdaten und seit dem Update hinzugefügte Kontakte bleiben erhalten. Alle Code-Backups lassen sich herunterladen; im ZIP stehen die alten Dateien unter `files/` und die Angaben zu neu hinzugefügten Dateien in `manifest.json`.
+- Bei einem Schreibfehler wird der Code automatisch zurückgesetzt. Nach einem harten Abbruch sperrt die Wartungsmarkierung die übrigen PHP-Seiten mit `503`; `/admin/update` bleibt zur administrativen Wiederherstellung verfügbar. Falls selbst die Updater-Seite beschädigt ist, die gesicherten Dateien per FTP wiederherstellen und erst danach `data/update-in-progress.json` entfernen.
+
+Der Webserver benötigt **ZipArchive**, ausgehendes **HTTPS** über cURL oder PHP-URL-Streams und Schreibrechte für `public/`, die beiden Beispieldateien unter `data/` und die privaten Update-Verzeichnisse. TLS-Zertifikate werden geprüft. Downloads sind auf 32 MiB und entpackte Pakete auf 100 MiB begrenzt; Dateien werden einzeln verarbeitet. Der Updater installiert nur Programmdateien unter `public/` ohne `uploads/` sowie die beiden `data/*.sample.json`-Dateien. Eigene Änderungen an Dateien, die auch zum Release gehören, können überschrieben werden. Dateien, die ein früheres Updater-Release verwaltet hat und das neue Release entfernt, werden mitgesichert und gelöscht; sonstige eigene Dateien bleiben stehen.
+
+Für ein neues Release:
+
+1. `version` in `public/includes/version.json` erhöhen, beispielsweise auf `1.1.0`; bei Bedarf auch `php_min` anpassen.
+2. Änderungen pushen und die GitHub-Prüfungen einschließlich der Updater-Tests abwarten.
+3. Auf GitHub ein stabiles Release mit dem dazu passenden Tag **`v1.1.0`** am geprüften Commit veröffentlichen. Der Tag muss zur Versionsdatei passen; ein zusätzliches ZIP-Asset ist nicht nötig.
+4. Auf dem Webserver unter **Admin → Updates** prüfen und installieren.
 
 ## Updates der Abhängigkeiten
 
