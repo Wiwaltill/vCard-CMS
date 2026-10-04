@@ -6,3 +6,5 @@ The original source files are included unchanged, so deployments need no Compose
 - [chillerlan/php-settings-container](https://github.com/chillerlan/php-settings-container/tree/2.1.6), version **2.1.6**. See `php-settings-container/LICENSE`.
 
 Only encoding is used by the application. The local wrapper in `../qr-code.php` renders the matrix to SVG or PNG with a four-module quiet zone. Updating these bundled sources requires running the QR roundtrip and application tests under both supported PHP versions.
+
+`packages.json` records the pinned versions used by the read-only GitHub workflow `Vendor update check`. When updating bundled sources, update this manifest and the versions above together, retaining upstream license files. The workflow compares these pins with the latest stable GitHub releases; it never replaces source files automatically.

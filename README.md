@@ -236,6 +236,28 @@ Die Funktionstests prüfen Suche, Pagination, Domain-Erkennung, Bildverarbeitung
 
 Die tatsächliche Browser-Verkleinerung zusätzlich mit Foto-Upload und Bildmigration im Browser prüfen; sie wird durch diese Skripte nicht vollständig abgedeckt. GitHub Actions prüft Syntax, Funktionen und Sicherheitsfälle mit PHP 8.0 und 8.4.
 
+## Updates der Abhängigkeiten
+
+Unter **GitHub → Actions → Vendor update check** stehen die eingebundenen Versionen von `php-qrcode` und `php-settings-container` sowie deren neueste stabile Releases. Der Check ist wöchentlich für Montag um **07:23 UTC** geplant und lässt sich über **Run workflow** manuell starten. Neue Releases erscheinen als Warnung und in der Zusammenfassung des Laufs. Ein fehlgeschlagener API-Abruf wird als Fehler gemeldet, nicht als „aktuell“ gewertet. Der Check erstellt keine Issues und verändert keine Vendor-Dateien.
+
+Die Versionsliste steht in [public/includes/vendor/packages.json](public/includes/vendor/packages.json). Bei einem Update Quelldateien, Lizenzhinweise, Versionsliste und Vendor-README gemeinsam aktualisieren. Neue Hauptversionen können eine neuere PHP-Version voraussetzen; vor der Übernahme die Anforderungen prüfen und die Tests ausführen.
+
+**Dependabot** prüft die verwendeten GitHub Actions wöchentlich und erstellt gebündelte Update-Pull-Requests. Automatisches Zusammenführen ist nicht eingerichtet. Die kopierten PHP-Vendor-Dateien werden davon nicht aktualisiert.
+
+Die Konfiguration muss auf GitHub im Standardbranch liegen; Actions und Dependabot müssen für das Repository aktiviert sein. In öffentlichen Repositories kann GitHub geplante Workflows nach 60 Tagen ohne Repository-Aktivität deaktivieren; bei Bedarf unter Actions wieder aktivieren. Eine Warnung im erfolgreichen Vendor-Check garantiert keine E-Mail-Benachrichtigung. Wer Releases direkt abonnieren möchte, kann in den Upstream-Repositories **Watch → Custom → Releases** wählen.
+
+Den Versionsvergleich ohne Netzwerkzugriff testen:
+
+```bash
+python3 tests/vendor_updates.py
+```
+
+Den aktuellen Stand live abfragen:
+
+```bash
+python3 scripts/check_vendor_updates.py
+```
+
 ## Mitwirken & Lizenz
 
 Fehler und Verbesserungsvorschläge können über die [GitHub Issues](https://github.com/Wiwaltill/vCard-CMS/issues) gemeldet werden. Hinweise zur Mitarbeit stehen in [CONTRIBUTING.md](CONTRIBUTING.md), die Community-Regeln in [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).

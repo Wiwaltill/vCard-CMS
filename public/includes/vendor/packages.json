@@ -1,0 +1,14 @@
+{
+  "packages": [
+    {
+      "name": "chillerlan/php-qrcode",
+      "repository": "chillerlan/php-qrcode",
+      "version": "5.0.5"
+    },
+    {
+      "name": "chillerlan/php-settings-container",
+      "repository": "chillerlan/php-settings-container",
+      "version": "2.1.6"
+    }
+  ]
+}

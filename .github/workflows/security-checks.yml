@@ -27,3 +27,5 @@ jobs:
         run: node tests/unsaved_changes.mjs
       - name: Test migration response recovery
         run: node tests/image_maintenance.mjs
+      - name: Test vendor update detection
+        run: python3 tests/vendor_updates.py

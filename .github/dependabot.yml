@@ -1,0 +1,16 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '07:23'
+      timezone: Etc/UTC
+    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns:
+          - '*'
+    commit-message:
+      prefix: 'deps'
