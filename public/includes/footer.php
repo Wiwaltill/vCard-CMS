@@ -10,9 +10,12 @@
       &copy; <?= date('Y') ?> <?= h($config['company_name']) ?>
     </div>
 
-      <div>
+      <div class="d-flex flex-wrap align-items-center gap-3">
         <a href="https://github.com/Wiwaltill/vCard-CMS" target="_blank" rel="noopener" style="text-decoration:none; color:var(--bs-body-color);">
           <i class="bi bi-github"></i> GitHub
+        </a>
+        <a href="/admin/update" style="text-decoration:none; color:var(--bs-body-color);">
+          <i class="bi bi-arrow-repeat"></i> <?= h(maintenance_t('Updates', 'Updates')) ?>
         </a>
       </div>
 
